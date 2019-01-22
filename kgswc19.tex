@@ -32,9 +32,9 @@
 % an abbreviated paper title here
 %
 \author{Alberto Moya\orcidID{0000-1111-2222-3333} \and
-Aidan Hogan\orcidID{1111-2222-3333-4444} \and
-Jesus P\'erez\orcidID{2222--3333-4444-5555} \and
-Grethel Coello\orcidID{2222--3333-4444-5555}}
+Aidan Hogan\orcidID{1111-2222-3333-4444}}% \and
+%Jesus P\'erez\orcidID{2222--3333-4444-5555} \and
+%Grethel Coello\orcidID{2222--3333-4444-5555}}
 %
 \authorrunning{A. Moya et al.}
 % First names are abbreviated in the running head.
@@ -980,7 +980,7 @@ In this paper we propose classifiers that predict whether or not the results of 
 
 We select the datasets to evaluate our proposal considering desirable characteristics, such as availability, size, dynamics, and integrity. Choosing Wikidata, we present statistics to understand such characteristics. In the case of the queries dataset, we did not find any existing dataset of queries that complied with the requirements, so we curated a query dataset for Wikidata based on query examples proposed by users.
 
-Finally, we evaluate our proposal, making a weekly prediction of change in the results of the queries and evaluating the success rates of the different classifiers each week based on precision, recall, and F-measure.
+Finally, we evaluate our proposal, making a weekly prediction of change in the results of the queries and evaluating the success rates of the different classifiers each week based on precision, recall, and F-measure. We also apply linear regression techniques to predict, specifically, when the results of a query will change.
 We measure the effectiveness of the characteristic based on our model of predicate dynamics versus a characterization of dynamics based on the historical results. The latter is a common factor in the previous proposals, but it requires a high cost. Our results show that our approach using predicate dynamics is competitive for prediction while being less expensive to support. An analysis of the sensitivity of the model to the different characteristics was also carried out, finding that our characteristics based on the dynamics of the predicates have the greatest influence.    
 
 Although the results obtained are encouraging, they are still preliminary. We consider for future work evaluating the quality of our proposal over a longer period. In addition, we believe that more complex query characteristics can improve the results, such as considering operator semantics; for example, to see if negation is affecting predicates or if the predicates are affected by the existence of filters. On the other hand, it would be worth expanding the set of queries in the test dataset, in order to increase the size, complexity, and coverage. Recently a query dataset for Wikidata was published\footnote{https://lists.w3.org/Archives/Public/semantic-web/2018Aug/0023.html}. It would be good to evaluate this query dataset, as well as to evaluate the sensitivity of our proposal to consider longer intervals and different Transformation Functions.
