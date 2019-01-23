@@ -31,7 +31,7 @@
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-\author{Alberto Moya\orcidID{0000-1111-2222-3333} \and
+\author{Alberto Moya\orcidID{0000-0002-7003-5087} \and
 Aidan Hogan\orcidID{1111-2222-3333-4444}}% \and
 %Jesus P\'erez\orcidID{2222--3333-4444-5555} \and
 %Grethel Coello\orcidID{2222--3333-4444-5555}}
@@ -65,7 +65,7 @@ Some works have proposed to learn from historical entity evolution, but a query 
 
 In this work, we tackle the problem of estimating future changes in query results based on data statistics and methods from Machine Learning. We devise a solution where we do not have complete information from the past, but a reduced statistical model that summarizes the historical dynamics based on predicates. We compute a predictive Dynamics Model for 23 versions of the Wikidata knowledge graph~\cite{VrandecicK14}, evaluating its suitability for predicting future changes in the query results. We select Wikidata as: (1) it provides a history of weekly versions that we can use to evaluate predictions and (2) it is edited by thousands of users, which means that significant changes are observed weekly.
 
-In summary, the \textbf{contributions} of this paper are: (i) we build a dataset of real queries for Wikidata, (ii) we provide an analysis of the evolution of the results of those queries over 23 weekly versions of Wikidata, (iii) we evaluated several classifiers to judges whether or not the results of a query will change regression techniques to determine specifically when a query results will change using a predicate-based Dynamics Model and features from the syntax of the query, and (iv) we show that the proposed features and classifier work well, and our results are close to the more expensive previous approaches that assume full knowledge of historical data.
+In summary, the \textbf{contributions} of this paper are: (i) we build a dataset of real queries for Wikidata, (ii) we provide an analysis of the evolution of the results of those queries over 23 weekly versions of Wikidata, (iii) we evaluated several classifiers to judges whether or not the results of a query will change and regression techniques to determine specifically when a query results will change using a predicate-based Dynamics Model and features from the syntax of the query, and (iv) we show that the proposed features and classifier work well, and our results are close to the more expensive previous approaches that assume full knowledge of historical data.
 
 The rest of this document is organized as follows: In Section~\ref{sec:related}, we review related works. Section~\ref{sec:preliminar} provides the formal definition of the problem. Section~\ref{sec:approach} describes our proposal. In Section~\ref{sec:data}, we explain our datasets. Section~\ref{sec:eval} presents the design and results of the experiments. We conclude and review future directions in Section~\ref{sec:conclusion}.
 
@@ -633,122 +633,59 @@ In addition, we train a Machine Learning model to determine the life spam of a q
 
 First, we consider the Pearson correlation between the characteristics. We found only a couple of highly correlated variables (\# triples and \# vars: 0.943). The influence of the use of various Transformation Functions in our model was also evaluated. In this case, Average was the Transformation Function that obtained the best result followed by Maximum.
 
-We tested a list of classifiers, including Decision Tree, Nearest Neighbors, and Naive Bayes among others listed in Table~\ref{tab:classifier}. Our pilot experiment shows that Nearest Neighbors, Gradient Boosting Classifier, and Random Forest work better than the others. We evaluated the quality of our proposal by forming a set of classifiers to predict the change of 221 queries in 15 weeks, which is equivalent to 3315 objects to classify, described in terms of our proposed characteristics. We split the data 80\% for training and 20\% for tests. To avoid overfitting, we use cross-validation in the training data.
+We tested a list of classifiers, including Decision Tree, Nearest Neighbors, and Naive Bayes among others listed in Table~\ref{tab:classifier}. Our pilot experiment shows that Nearest Neighbors and Decision Tree work better than the others. We evaluated the quality of our proposal by forming a set of classifiers to predict the change of 221 queries in 15 weeks, which is equivalent to 3315 objects to classify, described in terms of our proposed features. We split the data 80\% for training and 20\% for tests. To avoid overfitting, we use cross-validation in the training data.
 
-Table~\ref{tab:classifier} shows the quality values of the classifiers evaluated in terms of $F_1$. In the state of the art, most of the works use information of the history of the results of the queries, which requires storing previous complete past versions to evaluate the queries. To have a measure of the positioning of our proposal, we evaluate the incorporation of a new feature that counts how many times the results of the query change on average in the last three versions. Then, we did two executions: one with our syntactic characteristics and this new indicator, which we call the past, and a second with our syntactic characteristics and information about dynamic predicates from our model. Table~\ref{tab:classifier} shows that our algorithm achieved less quality. Despite obtaining lower results, the quality of our proposal is not far from that achieved by observing the results of queries in the past, but certainly, our approach is less expensive since it does not require knowledge of past query results.
+Table~\ref{tab:classifier} shows the quality values of the classifiers evaluated in terms of $F_1$. To have a measure of the positioning of our proposal, we added a new feature that counts how many times the results of the query change on average in the last three versions. Then, we did two executions with our syntactic features: one using this new indicator, and the second with our dynamic model. Table~\ref{tab:classifier} shows that our algorithm achieved less quality. Despite obtaining lower results, the quality of our proposal is not far from that achieved by observing the results of queries in the past, but certainly, our approach is less expensive since it does not require knowledge of past query results.
 
-Subsequently, we individually evaluate the classification performance using different groups of characteristics to determine the influence of each characteristic. Table~\ref{tab:features} shows the quality when each feature is not used: a lower value indicates that the characteristic has a large positive influence. For this, we use the Nearest Neighbors as classifier and Average as the Transformation Function. We can notice a slight fall in the feature Dyn and Negation.
+Finally, to predict the time that the results of a query will remain invariant (TTL), a continuous value (number of weeks) will be determined. For that we employed techniques of multiple linear regression using the sklearn and tensorflow library. The latter allows us to see how the periods of estimation and the convergence analysis will behave.
 
-Finally, we show in Figure~\ref{graph:Modelsize} the number of triples in Wikidata versions vs the number of triples in the Difference Sets, in which our Dynamics Model are based. It is clearly visible that our model requires much less storage space.
+We were able to predict the time of life (in relation to the number of invariant weeks) with an average square error of 0.43 and a variance score of 0.01. These results allow to predict future changes in query results with good accuracy using linear regression techniques.
+
 
 \begin{table*}[h]
 	\centering
 	\caption{Tested classifiers.}
 	\label{tab:classifier}
-	\begin{tabular}{|l|lll|lll|}    \hline
-		& \multicolumn{3}{|l|}{Past Results}           & \multicolumn{3}{|l|}{Dynamics Model}        \\    \hline
-		Classifier                   & Precision & Recall & F1 & Precision & Recall & F1 \\    \hline
-		Nearest Neighbors            & 0.827869 & 0.776923 & 0.801587 & 0.742188 & 0.730769 & 0.736434 \\
-		Gradient Boosting Classifier & 0.848233 & 0.784615 & 0.815185 & 0.734127 & 0.711538 & 0.722656 \\
-		Random Forest                & 0.818548 & 0.780769 & 0.799213 & 0.725146 & 0.715385 & 0.720232 \\
-		Decision Tree                & 0.830544 & 0.763462 & 0.795591 & 0.700382 & 0.705769 & 0.703065 \\
-		Linear SVM                   & 0.865342 & 0.753846 & 0.805755 & 0.735808 & 0.648077 & 0.689162 \\
-		Neural Net                   & 0.836364 & 0.796154 & 0.815764 & 0.693989 & 0.488462 & 0.573363 \\
-		Logistic Regression          & 0.836032 & 0.794231 & 0.814596 & 0.616253 & 0.525000    & 0.566978 \\
-		Naive Bayes                  & 0.792100   & 0.732692 & 0.761239 & 0.690323 & 0.411538 & 0.515663 \\    \hline
+	\begin{tabular}{|l|r|r|}    \hline		
+		Classifier                   & Past Results & Dynamics Model \\    \hline
+		Base Dummy 					 & 0.497869 & 0.486923 \\
+		Nearest Neighbors            & 0.701587 & 0.635923 \\
+		Decision Tree                & 0.695591 & 0.651462 \\
+		Linear SVM                   & 0.705755 & 0.593846 \\
+		Naive Bayes                  & 0.661239 & 0.587692 \\    \hline
 	\end{tabular}
 \end{table*}
+\begin{comment}
 
-\begin{table*}[]
+\begin{figure}
 	\centering
-	\caption{Feature analysis using Nearest Neighbors.}
-	\label{tab:features}
-	\begin{tabular}{|l|rrr|}        \hline
-		Feature           & Precision & Recall & F1 \\    \hline
-		\# triples        & 0.741414 & 0.705769 & 0.723152  \\
-		\# vars           & 0.738878 & 0.714615 & 0.726544 \\
-		\# predicates    & 0.732558 & 0.726923 & 0.729730 \\
-		\# projected vars & 0.726744 & 0.721154 & 0.723938 \\
-		FILTER            & 0.738878 & 0.714615 & 0.726544 \\
-		LIMIT             & 0.732558 & 0.726923 & 0.729730 \\
-		UNION             & 0.733640  & 0.730769 & 0.732201 \\
-		SUBQUERY         & 0.732558 & 0.736923 & 0.734734  \\
-		*PATH             & 0.732558 & 0.726923 & 0.729730 \\
-		NEGATION          & 0.713462 & 0.713462 & 0.713462  \\
-		DYN               & 0.706046 & 0.711538 & 0.708781    \\ \hline
-	\end{tabular}
-\end{table*}
-
-\begin{figure}[h]
-	\centering
-	\begin{tikzpicture}[thick, scale=0.5]
-	\begin{axis}[
-	%title={Temperature dependence of CuSO$_4\cdot$5H$_2$O solubility},
-	xlabel={Version},
-	ymin=0,
-	xtick={0,5,10,15,20,25},
-	legend pos=north west,
-	ymajorgrids=true,
-	grid style=dashed,
-	]
+	\begin{tikzpicture}[thick, scale=1]
+	\begin{axis}
 	
-	\addplot[
-	color=red,
-	mark=square,
-	]
-	coordinates {
-		(1,1102242331)(2,1138975810)(3,1141303957)(4,1170283653)(5,1176093821)(6,1184177503)(7,1190456714)(8,1211813217)(9,1239145151)(10,1271353260)(11,1293099057)
-	};
-	
-	\addplot[
-	color=red,
-	mark=square,
-	]
-	coordinates {
-		(13,1348622441)(14,1418460320)(15,1432143355)(16,1470298276)(17,1506140622)(18,1542278452)(19,1593334993)(20,1613832004)(21,1684774955)(22,1771601730)(23,1843086909)(24,1924967162)
-	};
-	
-	\addplot[
-	color=blue,
-	mark=square,
-	]
-	coordinates {
-		(2,43540931)(3,6798650)(4,30419079)(5,12002672)(6,14826495)(7,16592201)(8,33102669)(9,28305029)(10,45696749)(11,21282917)
-	};
-	
-	
-	\addplot[
-	color=blue,
-	mark=square,
-	]
-	coordinates {
-		(13,71196531)(14,21688658)(15,52656689)(16,46556227)(17,49129201)(18,62311275)(19,30121460)(20,25820733)(21,23229489)(22,24525255)(23,38007899)
-	};
-	
-	%\legend{# entities}
-	%\legend{# predicates}
-	%\legend{# literals}
-	%\legend{# blank nodes}
-	
+	\addplot 
+	coordinates {("Base Dummy",40137188)("Nearest Neighbors",4563382)("Decision Tree",29302968)("Linear SVM",8906402)("Naive Bayes",11455047)};
+	\addplot 
+	coordinates {(Base Dummy,40137188)(Nearest Neighbors,4563382)(Decision Tree,29302968)(Linear SVM,8906402)(Naive Bayes,11455047)};
+	\legend{Added, Removed}
 	\end{axis}
 	\end{tikzpicture}
-	\caption{Number of triples in Wikidata vs number of triples in Difference Sets.}
-	\label{graph:Modelsize}
+	\caption{Triples added and removed in Wikidata.}
+	\label{graph:delta}
 \end{figure}
+\end{comment}
+
 
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
 
-In this paper we propose classifiers that predict whether or not the results of a query will change in the short time interval; for this, we propose a model based on the dynamics of the predicates in the datasets and a set of characteristics extracted from the syntax of the queries. The proposed framework is flexible for incorporating new features extracted from the queries, from the current results, or from the model based on the multiplicity of predicates.
+In this paper we propose classifiers that predict whether or not the results of a query will change in the short time interval; for this, we propose a model based on the dynamics of the predicates in the datasets and a set of features extracted from the syntax of the queries. The proposed framework is flexible for incorporating new features extracted from the queries, from the current results, or from the model based on the multiplicity of predicates.
 
 We select the datasets to evaluate our proposal considering desirable characteristics, such as availability, size, dynamics, and integrity. Choosing Wikidata, we present statistics to understand such characteristics. In the case of the queries dataset, we did not find any existing dataset of queries that complied with the requirements, so we curated a query dataset for Wikidata based on query examples proposed by users.
 
-Finally, we evaluate our proposal, making a weekly prediction of change in the results of the queries and evaluating the success rates of the different classifiers each week based on precision, recall, and F-measure. We also apply linear regression techniques to predict, specifically, when the results of a query will change.
-We measure the effectiveness of the characteristic based on our model of predicate dynamics versus a characterization of dynamics based on the historical results. The latter is a common factor in the previous proposals, but it requires a high cost. Our results show that our approach using predicate dynamics is competitive for prediction while being less expensive to support. An analysis of the sensitivity of the model to the different characteristics was also carried out, finding that our characteristics based on the dynamics of the predicates have the greatest influence.    
+Finally, we evaluate our proposal, making a weekly prediction of change in the results of the queries and evaluating the success rates of the different classifiers each week based on F-measure. We also apply linear regression techniques to predict, specifically, when the results of a query will change.
+We measure the effectiveness of the characteristic based on our model of predicate dynamics versus a characterization of dynamics based on the historical results. The latter is a common factor in the previous proposals, but it requires a high cost. Our results show that our approach using predicate dynamics is competitive for prediction while being less expensive to support.    
 
-Although the results obtained are encouraging, they are still preliminary. We consider for future work evaluating the quality of our proposal over a longer period. In addition, we believe that more complex query characteristics can improve the results, such as considering operator semantics; for example, to see if negation is affecting predicates or if the predicates are affected by the existence of filters. On the other hand, it would be worth expanding the set of queries in the test dataset, in order to increase the size, complexity, and coverage. Recently a query dataset for Wikidata was published\footnote{https://lists.w3.org/Archives/Public/semantic-web/2018Aug/0023.html}. It would be good to evaluate this query dataset, as well as to evaluate the sensitivity of our proposal to consider longer intervals and different Transformation Functions.
-
-Finally, we would like to evaluate the quality of the characteristics and the proposed model to estimate the current Time-to-Live of the queries, rather than a binary One-Step-Change classification.
+Although the results obtained are encouraging, they are still preliminary. We consider for future work evaluating the quality of our proposal over a longer period. In addition, we believe that more complex query features can improve the results, such as considering operator semantics; for example, to see if negation is affecting predicates or if the predicates are affected by the existence of filters. On the other hand, it would be worth expanding the set of queries in the test dataset, in order to increase the size, complexity, and coverage. Recently a query dataset for Wikidata was published\footnote{https://lists.w3.org/Archives/Public/semantic-web/2018Aug/0023.html}. It would be good to evaluate this query dataset, as well as consider a probabilistic approach based on query algebra (rather than syntax).
 
 
 \bibliographystyle{splncs04}
