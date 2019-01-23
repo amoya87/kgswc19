@@ -41,12 +41,12 @@ Aidan Hogan\orcidID{1111-2222-3333-4444}}% \and
 % If there are more than two authors, 'et al.' is used.
 %
 \institute{Computer Science Department, University of Chile, Chile\\
-\email{\{amoya,ahogan,jperez,gcoello\}@dcc.uhile.cl}}
+\email{\{amoya,ahogan\}@dcc.uhile.cl}}
 %
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-Linked Open Datasets contain descriptions that change over time. The resources described by these datasets are continuously created, moved, deleted, linked, and unlinked. Applications that leverage Linked Data must be aware of these change dynamics to deliver accurate services. In this work, we tackle the problem of estimating future changes in query results based on query syntax features. We propose a model that exploits the characteristics of RDF to capture the dynamics of the predicates. Our Dynamics Model complements syntax features extracted from queries to assess if query results will change in the near future using classifiers and long future using Linear Regression. To evaluate our proposal, we select Wikidata as our dataset and we build a curated collection of queries. Our results show that the accuracy of our proposal approaches that obtained using information on the historical evolution of the query results but at a lower cost.
+Linked Open Datasets contain descriptions that change over time. The resources described by these datasets are continuously created, moved, deleted, linked, and unlinked. Applications that leverage Linked Data must be aware of these change dynamics to deliver accurate services. In this work, we tackle the problem of estimating future changes in query results based on query syntax features. We propose a model that exploits the characteristics of RDF to capture the dynamics of the predicates. Our Dynamics Model complements syntax features extracted from queries to assess if query results will change in the near future using classifiers and long future using Multiple Linear Regression techniques. To evaluate our proposal, we select Wikidata as our dataset and we build a curated collection of queries. Our results show that the accuracy of our proposal approaches that obtained using information on the historical evolution of the query results but at a lower cost.
 
 \keywords{Change estimation \and SPARQL query \and Link Data dynamics.}
 \end{abstract}
@@ -56,7 +56,7 @@ Linked Open Datasets contain descriptions that change over time. The resources d
 \section{Introduction}
 \label{sec:intro}
 %
-The Linked Data (LD) principles\footnote{https://www.w3.org/DesignIssues/LinkedData.html} provide a flexible publishing paradigm to integrate and interlink data on the Web. Following the LD principles, a lot of organizations are publishing valuable information online using Resource Description Framework (RDF) and other LD technologies. The standardized approach to query these kinds of data is SPARQL, the recommendation of the W3C\footnote{https://www.w3.org/} to query RDF. There are many public SPARQL endpoints that allow any data consumer to query RDF datasets on the Web~\cite{VandenbusscheUM17}. Since the LD principles have been created, until now, the LOD cloud\footnote{https://lod-cloud.net/} has grown significantly~\cite{SchmachtenbergBP14}. 
+The Linked Data (LD) principles\footnote{https://www.w3.org/DesignIssues/LinkedData.html} provide a flexible publishing paradigm to integrate and interlink data on the Web. Following the LD principles, a lot of organizations are publishing valuable information online using Resource Description Framework (RDF) and other LD technologies. The standardized approach to query these kinds of data is SPARQL, the recommendation of the W3C\footnote{https://www.w3.org/} to query RDF. There are many public SPARQL endpoints that allow any data consumer to query RDF datasets on the Web~\cite{VandenbusscheUM17}. Since the LD principles have been created, until now, the LOD cloud\footnote{https://lod-cloud.net/} has grown significantly~\cite{SchmachtenbergBP14}.
 
 Many applications that consume Linked Data face challenges related to changes in the underlying data, whose key is keeping data fresh. Since datasets change over time, long-running applications that cache and repeatedly use query results obtained from a SPARQL endpoint may resubmit the queries regularly to ensure up-to-dateness. As a result, applications often get the same results in several query executions, resulting in an unnecessary computation, and other times, they give the user stale results when the backend data change between re-executions. 
 
@@ -398,9 +398,8 @@ We conducted an empirical study to evaluate the effectiveness of our proposal to
 
 \subsection{RDF Dataset}
 
-We use Wikidata as one of the largest cross-domain knowledge graphs. There are several different kinds of data dumps available in JSON, XML, and RDF formats. We use 23 snapshots from 18/04/2017 to 27/09/2017, which are captured weekly. We worked with the truthy version in the RDF N-triples format, which represents statements that have the best non-deprecated rank for a given property.
-
-The first version has 1,102,242,331 triples, 57,499,191 unique IRIs, 3,276 unique predicates, 933,588,860 literals, and 7,449 blank nodes, while the final version has 1,924,967,162 triples (+74\%), 80,637,164 unique IRIs (+40\%), 3,660 unique predicates (+11\%), 1,676,930,476 literals (+79\%) and 8,909 blank nodes (+19\%). Wikidata is maintained collaboratively by volunteer editors. Figure~\ref{graph:datasize} shows the growth maintained over the period of some of these indicators. The gap in week 12 is due to the fact that we were not able to obtain the data for that week. Even though the information is relatively incremental, there are deletions. Figure~\ref{graph:delta} shows the ratio of triples eliminated and added each week.
+We use 23 Wikidata snapshots from 18/04/2017 to 27/09/2017, which are captured weekly in truthy version, which represents statements that have the best non-deprecated rank for a given property. 
+The first version has 1,102,242,331 triples, 57,499,191 unique IRIs, 3,276 unique predicates, 933,588,860 literals, and 7,449 blank nodes, while the final version has 1,924,967,162 triples (+74\%), 80,637,164 unique IRIs (+40\%), 3,660 unique predicates (+11\%), 1,676,930,476 literals (+79\%) and 8,909 blank nodes (+19\%). Figure~\ref{graph:datasize} shows the growth maintained over the period of some of these indicators. The gap in week 12 is due to the fact that we were not able to obtain the data for that week. Even though the information is relatively incremental, there are deletions. Figure~\ref{graph:delta} shows the ratio of triples eliminated and added each week.
 
 \begin{figure}[h]
 	\begin{minipage}[b]{0.40\linewidth}
@@ -469,24 +468,9 @@ The first version has 1,102,242,331 triples, 57,499,191 unique IRIs, 3,276 uniqu
 
 \subsection{Queries Dataset}
 
-Given our dynamic, cross-domain, large dataset, with historical information about its evolution, we now need a collection of queries for the dataset.
+As opposed to RDF data, which can be easily obtained in the form of dumps, at the time of conducting this research, we did not find any structured dataset with queries following the Wikidata data model and Wikidata query logs where inaccessible. We considered then 388 queries of examples from Wikidata page\footnote{https://www.wikidata.org/wiki/Wikidata:SPARQL\_query\_service/queries/examples}. These queries are intended to show the behavior of the system or highlight the characteristics of the Wikidata dataset and, therefore, should reflect real-world queries.
 
-As opposed to RDF data, which can be easily obtained in the form of dumps, at the time of conducting this research, we did not find any structured dataset with queries following the Wikidata data model. Besides, Wikidata query logs are inaccessible, which would be interesting to understand the current usage of these data.
-
-We found a set of 388 queries of examples about Wikidata\footnote{https://www.wikidata.org/wiki/Wikidata:SPARQL\_query\_service/queries/examples}, distributed in 18 categories. We consider these queries to evaluate our proposal. We crawled the sample queries from Wikidata in March 2018. This set is not a query log, but a wiki page containing selected queries sent by users. These queries are intended to show the behavior of the system or highlight the characteristics of the Wikidata dataset and, therefore, should reflect real-world queries.
-
-Finally, the queries had to be curated manually, because they had syntax errors; others were not considered, because they asked information external to Wikidata, such as DBpedia\footnote{http://dbpedia.org/}, bigdata\footnote{http://www.bigdata.com/}; others asked for qualifiers that are not in the truthy version. We also eliminated the queries that returned bindings to blank nodes to facilitate the comparison between the results (they were only 10).
-
-We consider query results as changed if it is not the same results returned for this query in the previous evaluation. Therefore, we need deterministic queries, that is, we remove those that could change their result even when the data is the same, such as, queries that contain the keyword SAMPLE and LIMIT without a total order. In our case, we eliminate the queries with the keyword SAMPLE and add ORDER BY to all the queries with all the projected variables. The latter change also facilitates the detection of changes in the results by iterating over both results sets in their sorted order.
-
-Many queries use the custom Label service of Wikidata\footnote{https://www.mediawiki.org/wiki/Wikidata\_Query\_Service/User\_Manual\#Label\_service}. The service is very helpful when you want to retrieve labels, as it reduces the complexity of SPARQL queries that would otherwise be needed to achieve the same effect. This service can contain one or more language codes, separated by commas. Languages are preferred in the order in which they are specified. If no label is available in any of the specified languages, the Q-id of the entity (without any prefix) is its label. For our purposes, we need to consult only the information of the truthy version of Wikidata. Therefore, these queries were modified by the following procedure:
-
-\begin{itemize}
-	\item If an unbound variable in SELECT is named $?NAMELabel$, then we generated the label (rdfs:label) for the entity in variable $ ?NAME $ for each specified languages.
-	\item If an unbound variable in SELECT is named $ ?NAMEAltLabel $, then we generated the alias (skos:altLabel) for the entity in variable $ ?NAME $ for each specified languages.
-	\item If an unbound variable in SELECT is named $ ?NAMEDescription $, then we generated the description (schema:description) for the entity in variable $ ?NAME $ for each specified languages.
-\end{itemize}
-Then, each label, alia, and description are delivered according to the language order. 
+Then, the queries had to be curated manually, because they had syntax errors; others asked information external to Wikidata or asked for qualifiers that are not present in the truthy version. We also eliminated the queries that returned bindings to blank nodes to facilitate the comparison between the results (they were only 10). Therefore, we need deterministic queries, that is, we remove those that could change their result even when the data is the same. In our case, we eliminate the queries with the keyword SAMPLE and add ORDER BY to all the queries with all the projected variables. The latter change also facilitates the detection of changes in the results by iterating over both results sets in their sorted order. Also, we remove the use of custom Label service of Wikidata\footnote{https://www.mediawiki.org/wiki/Wikidata\_Query\_Service/User\_Manual\#Label\_service}. We could not query online services. Therefore, these queries were modified. 
 
 Figures~\ref{fig:languageB} and \ref{fig:languageA} shows an example of several transformations of a query.
 
@@ -515,10 +499,7 @@ WHERE {
 ORDER BY ?item ?itemLabel
 \end{lstlisting}
 
-In the end, we have 221 curated queries. An analysis of the basic use of SPARQL characteristics was carried out counting the keywords in the queries (see Table~\ref{tab:Keyword}). The first block in Table~\ref{tab:Keyword} describes the type of queries where we see that the set only has SELECT queries.
-The second block contains solution modifiers. We notice that all (100\%) of the queries use ORDER BY which is due to the determination process used. LIMIT is used in (18.10\%) and DISTINCT is used more widely (29.41\%).
-The third block has keywords associated with the SPARQL algebra operators that occur in the body. We see that FILTER (92.31\%) and OPTIONAL (82.35\%) are quite common, which is due to the language service elimination process used and to a lesser extent UNION (6.79\%) and NOT EXISTS (5.43\%) with some MINUS (1.81\%) and EXISTS (0.45\%).
-The fourth block has aggregation operators. We see the highest use of GROUP BY (23.08\%), which is combined with most aggregation operators. Within the operators, the use of COUNT (19.91\%) stands out and the rest are used scarcely (<1.81\%).
+In the end, we have 221 curated queries. An analysis of the basic use of SPARQL features was carried out counting the keywords in the queries (see Table~\ref{tab:Keyword}).
 
 \begin{table}[h]
 	\centering
@@ -552,7 +533,7 @@ The fourth block has aggregation operators. We see the highest use of GROUP BY (
 	\end{tabular}}
 \end{table}
 
-Once we have shown a basic analysis about the presence of keywords in the queries, we analyze the structure of the triple patterns. This is important, because our notion of freshness focuses on predicates. This restricts our approach to triple patterns with a constant in the predicate position. Therefore, our first objective is to verify the frequency of such patterns in the queries. Table~\ref{tab:Pattern} shows that V C V (71.73\%) is the most used, V C C (18.05\%) is also very common and in total 90.35\% of the triple patterns have a constant in the predicate position, which helps validate our approach of using a model based on the dynamics of predicates.
+Once we have shown a basic analysis about the presence of keywords in the queries, we analyze the structure of the triple patterns. This is important, because our notion of freshness focuses on predicates. This restricts our approach to triple patterns with a constant in the predicate position. Table~\ref{tab:Pattern} shows that in total 90.35\% of the triple patterns have a constant in the predicate position, which validate our approach of using a model based on the dynamics of predicates.
 
 \begin{table}[h]
 	\centering
@@ -576,7 +557,7 @@ Once we have shown a basic analysis about the presence of keywords in the querie
 	\end{tabular}}
 \end{table}
 
-Table~\ref{tab:Pattern} also shows that 7.93\% of triple patterns contain a Property Path in the predicate position. Then we set out to analyze these triples more deeply. The Property Paths are expressions that are formed recursively by applying a set of rules. Table~\ref{tab:Path} shows the frequency of occurrence of these patterns in our queries. It shows that $ P \rightarrow P * $ (74.70\%) and $ P \rightarrow P + $ (9.64\%) are often applied, which corresponds to our intuition to have a feature that indicates if there are triple patterns offering arbitrary length paths (*PATH). We should also notice that there is no negation at the level of the path. Our feature extractor is able to extract all constants of predicates within paths.
+Table~\ref{tab:Pattern} also shows that 7.93\% of triple patterns contain a Property Path in the predicate position. Then we set out to analyze these triples more deeply. Table~\ref{tab:Path} shows the frequency of occurrence of these patterns in our queries. It shows that $ P \rightarrow P * $ (74.70\%) and $ P \rightarrow P + $ (9.64\%) are often applied, which corresponds to our intuition to have a feature that indicates if there are triple patterns offering arbitrary length paths (*PATH). We should also notice that there is no negation at the level of the path. Our feature extractor is able to extract all constants of predicates within paths.
 
 \begin{table}[h]
 	\centering
@@ -834,7 +815,7 @@ To build the Difference Sets ($\Delta$) for our model we used an approach based 
 	\item Trigger a detection of the change as soon as the order of the statements differs between two snapshots.
 \end{enumerate}
 
-Then we configure the parameters of our model. For the time interval, we consider three versions of the dataset equivalent to the last three weeks. As the Transformation Function, we evaluate three basic functions: Maximum, Minimum, and Average. For example, Maximum will take the dynamics of the most dynamic property (used as a predicate in the query) as a feature. 
+Then we configure the parameters of our model. For the time interval, we consider three versions of the dataset equivalent to the last three weeks. As the Transformation Function, we evaluate three basic functions: Maximum, Minimum, and Average. For example, Maximum will take the dynamics of the most dynamic property (used as a predicate in the query) as a feature.
 In addition, given that existing approaches are based on the historical results of the queries, we evaluate the substitution of our model for a historical change indicator that counts how many times the results have changed in the last three weeks.
 
 \subsection{Measures}
