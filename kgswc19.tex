@@ -56,33 +56,27 @@ Linked Open Datasets contain descriptions that change over time. The resources d
 \section{Introduction}
 \label{sec:intro}
 %
-The Linked Data (LD) principles\footnote{https://www.w3.org/DesignIssues/LinkedData.html} provide a flexible publishing paradigm to integrate and interlink data on the Web. Following the LD principles, a lot of organizations are publishing valuable information online using Resource Description Framework (RDF) and other LD technologies. The standardized approach to query these kinds of data is SPARQL, the recommendation of the W3C\footnote{https://www.w3.org/} to query RDF. There are many public SPARQL endpoints that allow any data consumer to query RDF datasets on the Web~\cite{VandenbusscheUM17}. Since the LD principles have been created, until now, the LOD cloud\footnote{https://lod-cloud.net/} has grown significantly~\cite{SchmachtenbergBP14}.
+Many applications that consume Linked Data (LD) face challenges related to changes in the underlying data, whose key is keeping data fresh. Since datasets change over time, long-running applications that cache and repeatedly use query results obtained from a SPARQL endpoint may resubmit the queries regularly to ensure up-to-dateness. As a result, applications often get the same results in several query executions, resulting in an unnecessary computation, and other times, they give the user stale results when the backend data change between re-executions. 
 
-Many applications that consume Linked Data face challenges related to changes in the underlying data, whose key is keeping data fresh. Since datasets change over time, long-running applications that cache and repeatedly use query results obtained from a SPARQL endpoint may resubmit the queries regularly to ensure up-to-dateness. As a result, applications often get the same results in several query executions, resulting in an unnecessary computation, and other times, they give the user stale results when the backend data change between re-executions. 
-
-By caching the answers of queries and using the cached replies whenever possible, client-side caches reduce the network traffic between clients and servers, the load on servers, and the average user-perceived latency of query processing. However, for caches to be useful, cache consistency must be maintained, that is, cached copies should be updated when the data that gave rise to it change.
+By caching the answers of queries and using the cached replies whenever possible, client-side caches reduce the network traffic between clients and servers, the load on servers, and the average user-perceived latency of query processing. However, for caches to be useful, cached copies should be updated when the data that gave rise to it change.
 Ensuring a strong consistency in which no stale copy of the modified document will ever be returned to the user could be expensive. Thus, several weak consistency approaches have been proposed that try to keep the local data of the applications updated at lower cost~\cite{KnuthHS16,DividinoGS15,NishiokaS17}.
 
-Some works have proposed to learn from historical entity evolution, but a query could involve many entities. Considering the historical evolution of all entities relating to a query is expensive because it is necessary to have the previous complete versions of data and to obtain the results of the execution of the query in each version. In addition, several recent works have explored the dynamics of the query results with the intention of finding patterns that allow for characterizing, recognizing, and predicting changes~\cite{KaferAUOH13,NishiokaS16,GonzalezH18}. Recent works have found some general correlations with datasets dynamics, such as, the domains, predicates, and schema~\cite{KaferAUOH13,NishiokaS17,UmbrichHHPD10}. Based on dynamic knowledge, hybrid approaches have been developed to return fresher results and at the same time speed up queries, but freshness estimates are a major and still current challenge, because of the difficulty of predicting the underlying dynamics on the growing Web of Data.
+Some works have proposed to learn from historical entity evolution, but a query could involve many entities. Considering the historical evolution of all entities relating to a query is expensive because it is necessary to have the previous complete versions of data and to obtain the results of the execution of the query in each version. In addition, recent works have explored the dynamics of the LD with the intention of finding patterns that allow for characterizing, recognizing, and predicting changes~\cite{KaferAUOH13,NishiokaS16,GonzalezH18} finding some general correlations, such as, the domains, predicates, and schema~\cite{KaferAUOH13,NishiokaS17,UmbrichHHPD10}. Based on dynamic knowledge, hybrid approaches have been developed to return fresher query results and at the same time speed up queries, but freshness estimates are a major and still current challenge, because of the difficulty of predicting the underlying dynamics on the growing Web of Data.
 
-In this work, we tackle the problem of estimating future changes in query results based on data statistics and methods from Machine Learning. We devise a solution where we do not have complete information from the past, but a reduced statistical model that summarizes the historical dynamics based on predicates. Subsequently, we develop classifiers for assessing whether or not query results will change in the future. Additionally, we propose to use a set of features extracted from the query syntax.
+In this work, we tackle the problem of estimating future changes in query results based on data statistics and methods from Machine Learning. We devise a solution where we do not have complete information from the past, but a reduced statistical model that summarizes the historical dynamics based on predicates. We compute a predictive Dynamics Model for 23 versions of the Wikidata knowledge graph~\cite{VrandecicK14}, evaluating its suitability for predicting future changes in the query results. We select Wikidata as: (1) it provides a history of weekly versions that we can use to evaluate predictions and (2) it is edited by thousands of users, which means that significant changes are observed weekly.
 
-We apply this framework to compute a predictive Dynamics Model for 23 versions of the Wikidata knowledge graph~\cite{VrandecicK14}, evaluating its suitability for predicting future changes in the query results. We select Wikidata as: (1) it provides a history of weekly versions that we can use to evaluate predictions and (2) it is edited by thousands of users, which means that significant changes are observed weekly. In addition, we build a dataset of real queries on Wikidata to monitor and to check the validity of our proposed approach. 
-
-In summary, the \textbf{contributions} of this paper are: (i) we build a dataset of real queries for Wikidata, (ii) we provide an analysis of the evolution of the results of those queries over 23 weekly versions of Wikidata, (iii) we propose a classifier that judges whether or not the results of a query will change using a predicate-based Dynamics Model and features from the syntax of the query, and (iv) we show that the proposed features and classifier work well, and our results are close to the more expensive previous approaches that assume full knowledge of historical data.
+In summary, the \textbf{contributions} of this paper are: (i) we build a dataset of real queries for Wikidata, (ii) we provide an analysis of the evolution of the results of those queries over 23 weekly versions of Wikidata, (iii) we evaluated several classifiers to judges whether or not the results of a query will change regression techniques to determine specifically when a query results will change using a predicate-based Dynamics Model and features from the syntax of the query, and (iv) we show that the proposed features and classifier work well, and our results are close to the more expensive previous approaches that assume full knowledge of historical data.
 
 The rest of this document is organized as follows: In Section~\ref{sec:related}, we review related works. Section~\ref{sec:preliminar} provides the formal definition of the problem. Section~\ref{sec:approach} describes our proposal. In Section~\ref{sec:data}, we explain our datasets. Section~\ref{sec:eval} presents the design and results of the experiments. We conclude and review future directions in Section~\ref{sec:conclusion}.
-
 
 %
 \section{Related Work}
 \label{sec:related}
 %
 
-Many applications can benefit from change prediction in query results. Both, Smart Caching (to save computational resources) and Hybrid Architectures (to deliver fresh results in less time) require synchronization techniques. Several techniques have been developed following strong consistency, based on HTTP metadata~\cite{fielding2rfc} and notifications~\cite{PassantM10,Fitzpatrick10,TrampFEA10}. Other works seek weak consistency based on probabilities, such as Empirical Distributions~\cite{NeumaierU16}, Poisson Processes~\cite{UmbrichHHPD10}, and Markov Chains~\cite{UmbrichMP15}, as well as other works based on heuristics~\cite{AliciAOCU12,UmbrichMP15,KnuthHS16}, metrics~\cite{DividinoGS15,KnuthHS16,AkhtarAL17}, and Machine Learning~\cite{NishiokaS17,GonzalezH18}. In the case of metadata, some works~\cite{UmbrichHHPD10,DividinoKG14,Kjernsmo15,NeumaierU16} show that these data are often not provided or are wrong. In the case of notifications, several tools have been developed, such as rsine~\cite{MaderMS14} and Boca~RDF~\cite{MissierACDG07}, but these mechanisms must keep a subscriber list and open connection states that can also cause scalability problems. The rest of the approaches achieve interesting results, but the main deficiency in these approaches is that their quality depends on having a long and complete history of updates. In the case of ML-based approaches, they constitute a general framework where important improvements can be achieved by incorporating relevant features to the models. In our approach, we propose an ML-based solution that dispenses with the expensive history of updates by a lighter model with statistics from this history and syntactic query features.
+Many applications can benefit from change prediction in query results. Both, Smart Caching to save computational resources and Hybrid Architectures to deliver fresh results in less time. Several techniques have been developed following strong consistency, based on HTTP metadata~\cite{fielding2rfc} and notifications~\cite{PassantM10,Fitzpatrick10,TrampFEA10}. Other works seek weak consistency based on probabilities, such as Empirical Distributions~\cite{NeumaierU16}, Poisson Processes~\cite{UmbrichHHPD10}, and Markov Chains~\cite{UmbrichMP15}, as well as other works based on heuristics~\cite{AliciAOCU12,UmbrichMP15,KnuthHS16}, metrics~\cite{DividinoGS15,KnuthHS16,AkhtarAL17}, and Machine Learning~\cite{NishiokaS17,GonzalezH18}. In the case of metadata, many works~\cite{UmbrichHHPD10,DividinoKG14,Kjernsmo15,NeumaierU16} have show that these data are often not provided or are wrong. In the case of notifications, several tools have been developed, such as rsine~\cite{MaderMS14} and Boca~RDF~\cite{MissierACDG07}, but these mechanisms must keep a subscriber list and it cause scalability problems. The rest of the approaches achieve interesting results, but the main deficiency in these approaches is that their quality depends on having a long and complete history of updates. In the case of ML-based approaches, they constitute a general framework where important improvements can be achieved by incorporating relevant features to the models. In our approach, we propose an ML-based solution that dispenses with the expensive history of updates by a lighter model with statistics from this history and syntactic query features.
 
-Some works have tried to understand the dynamics of the LOD datasets~\cite{UmbrichHHPD10,UmbrichKL10,KaferAUOH13,DividinoSGG13,NishiokaS16}. Some features found to describe the dynamics of a resource are Pay-Level Domain (PLD)~\cite{NishiokaS16,NishiokaS17}, predicates~\cite{KaferAUOH13,NishiokaS17}, and Characteristic Sets (CS)~\cite{NishiokaS16,GonzalezH18} that are correlated with the dynamics of several datasets studied. This knowledge can be used to estimates the freshness of cached data. Umbrich et al.~\cite{UmbrichKHP12,UmbrichKPPH12,ekawUmbrichKHP12} identified two variants to obtain knowledge about freshness for different query patterns based on predicates. In more recent work Dehghanzadeh et al.~\cite{DehghanzadehPKUHD14} proposed a solution to estimate the freshness using cardinality estimation techniques based on predicates and CS. However, to the best of our knowledge, there is no proposal to estimate the freshness of cached query results using Machine Learning models based on syntactic features from queries and reduced historical statistics. In addition, the previous approaches usually impose restrictions on queries, such as not considering complex queries, e.g., with filters. Also, we do not find works that report the quality of the proposed models on complex real queries.
-
+Some works have tried to understand the dynamics of the LOD datasets~\cite{UmbrichHHPD10,UmbrichKL10,KaferAUOH13,DividinoSGG13,NishiokaS16}. Some features found to describe the dynamics of a resource are Pay-Level Domain (PLD)~\cite{NishiokaS16,NishiokaS17}, predicates~\cite{KaferAUOH13,NishiokaS17}, and Characteristic Sets (CS)~\cite{NishiokaS16,GonzalezH18}. This knowledge could be used to estimates the freshness of cached data. Umbrich et al.~\cite{UmbrichKHP12,UmbrichKPPH12,ekawUmbrichKHP12} identified variants to obtain knowledge about freshness for different query patterns based on predicates. In more recent work Dehghanzadeh et al.~\cite{DehghanzadehPKUHD14} proposed a solution to estimate the freshness using cardinality estimation techniques based on predicates and CS. However, to the best of our knowledge, there is no proposal to estimate the freshness of cached query results using Machine Learning models based on syntactic features from queries and reduced historical statistics.
 
 %
 \section{Preliminaries: RDF and SPARQL}
@@ -141,7 +135,7 @@ Next, we formalize the problem addressed in this work and present our proposed s
 
 For this work, we consider a dynamic RDF dataset, denoted by $\mathcal{D}$. In addition, we assume that we have consecutive sequence of $m$ past versions $\mathcal{D} = (d_1, d_2, ..., d_m)$ constituting different revisions fetched at regular intervals. We also consider a SPARQL SELECT query $q$, of which we would like to know if its results are going to be valid for a long time. For that, we have the results of $q$ on each of the $m$ past versions of $\mathcal{D}$ and we need to know when we should update it. Then, we call $q(d_i)$ the result of executing the query $q$ on the $d_i$ version of $\mathcal{D}$.\\
 
-In addition, we consider delta ($\delta$) a function to compute the binary dissimilarity between two results for a query $q$ with the following expression:
+Let delta ($\delta$) be a function to compute the binary dissimilarity between two results for a query $q$ with the following expression:
 
 \begin{equation}
 \label{eq:delta}
@@ -153,7 +147,7 @@ In addition, we consider delta ($\delta$) a function to compute the binary dissi
 
 \begin{example}
 	\label{ex:dataset}    
-	Consider the following examples of seven versions of a dynamic RDF dataset that contains a subject and four properties. Also, consider the queries~\ref{lst:sparql0}, \ref{lst:sparql1} and \ref{lst:sparql2}.
+	Consider the following example of seven versions of a RDF dataset. Also, consider the queries~\ref{lst:sparql0}, \ref{lst:sparql1} and \ref{lst:sparql2}.
 \end{example}
 
 \setlength{\tabcolsep}{6pt}
@@ -239,11 +233,9 @@ We propose a scheme that automatically identifies whether a SPARQL query will ch
 
 \subsection{Feature Extractor}
 
-In order to predict when the results of a query will change, we propose a framework based on Machine Learning using features extracted from the queries. Our features are based on the syntactic analysis of the queries; then some features are delivered to the Dynamics Model, which provides an indicator based on the probability of change for the constant predicates within the triple patterns of the query.
+Our features are based on the syntactic analysis of the queries; then some features are delivered to the Dynamics Model, which provides an indicator based on the probability of change for the constant predicates within the triple patterns of the query.
 
-The extracted features try to capture the basic characteristics of a query. We try to discover the degree of correlation between the propensity to change, with respect to numerical values, such as the number of variables, the number of triple patterns, the number of predicate or entity constants, or the number of projected variables. We also believe that some qualitative variables may be related to the change, such as the existence of some solution-modifiers.
-
-We also consider features that describe the complexity of the queries, such as the presence of subqueries, the existence of recursive expressions in the Property Paths of the triple patterns or the existence of any type of negation.
+We try to discover the degree of correlation between the propensity to change, with respect to numerical values, such as the number of variables, the number of triple patterns or number of predicate. We also believe that some qualitative variables may be related to the change, such as the existence of some solution-modifiers. We also consider features that describe the complexity of the queries, such as the presence of subqueries, the existence of recursive expressions in the Property Paths of the triple patterns or the existence of any type of negation.
 
 Figure~\ref{fig:query} shows the complete list of evaluated features and shows the nominals. In the case of negation, we consider the statements MINUS, FILTER NOT EXISTS, and FILTER NOT BOUND and by the recursive path we understand those Property Paths that have patterns of the form $e*$ or $e+$ (see Definition~\ref{eq:pp}).
 
@@ -299,7 +291,6 @@ We propose a model to estimate the dynamics of the results of a SPARQL query on 
 	\label{ex:pm}    
 	Considering Example~\ref{ex:dataset}, the Predicate Multiplicity of predicate \textit{image} in $d_6$ dataset is:    $M(image,d_6) = 2$
 \end{example}
-
 
 Then, we must capture the change between two versions of an RDF dataset at the triples level, which represents triples added and deleted between the versions. For this purpose, we define a \textit{Difference Set} as an RDF dataset denoted by $\Delta(d_1, d_2)$ applying low-level change detection techniques.
 
@@ -388,7 +379,7 @@ Dyn(p, \mathcal{D},[n,m]) = \frac{AM(p, \mathcal{D},[n,m])}{AM(\mathcal{D},[n,m]
 	$ Dyn(area, \mathcal{D},[1,7]) = \frac{0}{5} = 0$
 \end{example}
 
-Considering our proposed model, the Dynamics Model component receives the set of predicates extracted from the queries, calculates the $Dyn(p, \mathcal{D},[n,m])$ for each predicate $p$ and provides the value of a Transformation Function on these indicators. The idea behind the Transformation Function is to estimate the dynamics of the query based on the Dynamics of the predicates, e.g., Average and Maximum.
+Considering our proposed model, the Dynamics Model component receives the set of predicates extracted from the queries, calculates the $Dyn(p, \mathcal{D},[n,m])$ for each predicate $p$ and provides the value of a Transformation Function on these indicators. The intention of the Transformation Function is to estimate the dynamics of the query based on the Dynamics of the predicates.
 
 
 \section{Datasets}
@@ -468,9 +459,9 @@ The first version has 1,102,242,331 triples, 57,499,191 unique IRIs, 3,276 uniqu
 
 \subsection{Queries Dataset}
 
-As opposed to RDF data, which can be easily obtained in the form of dumps, at the time of conducting this research, we did not find any structured dataset with queries following the Wikidata data model and Wikidata query logs where inaccessible. We considered then 388 queries of examples from Wikidata page\footnote{https://www.wikidata.org/wiki/Wikidata:SPARQL\_query\_service/queries/examples}. These queries are intended to show the behavior of the system or highlight the characteristics of the Wikidata dataset and, therefore, should reflect real-world queries.
+As opposed to RDF data, which can be easily obtained in the form of dumps, at the time of conducting this research, we did not find any structured dataset with queries following the Wikidata data model and Wikidata query logs where inaccessible. We considered then 388 queries of examples from Wikidata page\footnote{https://www.wikidata.org/wiki/Wikidata:SPARQL\_query\_service/queries/examples}.
 
-Then, the queries had to be curated manually, because they had syntax errors; others asked information external to Wikidata or asked for qualifiers that are not present in the truthy version. We also eliminated the queries that returned bindings to blank nodes to facilitate the comparison between the results (they were only 10). Therefore, we need deterministic queries, that is, we remove those that could change their result even when the data is the same. In our case, we eliminate the queries with the keyword SAMPLE and add ORDER BY to all the queries with all the projected variables. The latter change also facilitates the detection of changes in the results by iterating over both results sets in their sorted order. Also, we remove the use of custom Label service of Wikidata\footnote{https://www.mediawiki.org/wiki/Wikidata\_Query\_Service/User\_Manual\#Label\_service}. We could not query online services. Therefore, these queries were modified. 
+Then, the queries had to be curated manually, because they had syntax errors; others asked information external to Wikidata or asked for qualifiers that are not present in the truthy version. We also eliminated the queries that returned bindings to blank nodes to facilitate the comparison between the results. Therefore, we need deterministic queries. In our case, we eliminate the queries with the keyword SAMPLE and add ORDER BY to all the queries with all the projected variables. The latter change also facilitates the detection of changes in the results. Also, we removed the use of custom Label service of Wikidata\footnote{https://www.mediawiki.org/wiki/Wikidata\_Query\_Service/User\_Manual\#Label\_service}.
 
 Figures~\ref{fig:languageB} and \ref{fig:languageA} shows an example of several transformations of a query.
 
@@ -499,47 +490,11 @@ WHERE {
 ORDER BY ?item ?itemLabel
 \end{lstlisting}
 
-In the end, we have 221 curated queries. An analysis of the basic use of SPARQL features was carried out counting the keywords in the queries (see Table~\ref{tab:Keyword}).
+In the end, we have 221 curated queries. Then, we analyze the structure of the triple patterns of the queries. This is important, because our notion of freshness focuses on predicates. This restricts our approach to queries with triple patterns with a constant in the predicate position. Table~\ref{tab:Pattern} shows that in total 90.35\% of the triple patterns have a constant in the predicate position, which validate our approach of using a model based on the dynamics of predicates.
 
 \begin{table}[h]
-	\centering
-	\caption{Keyword count in queries.}
-	\label{tab:Keyword}
-	\scalebox{0.9}{
-		\begin{tabular}{lrr} \hline
-			Element       & Absolute & Relative        \\    \hline
-			SELECT        & 221      & 100.00\%      \\
-			ASK           & 0        & 0.00\%        \\
-			DESCRIBE      & 0        & 0.00\%        \\
-			CONSTRUCT     & 0        & 0.00\%        \\    \hline
-			DISTINCT      & 65       & 29.41\%       \\
-			LIMIT         & 40       & 18.10\%       \\
-			OFFSET        & 0        & 0.00\%        \\
-			ORDER BY      & 221      & 100.00\%      \\    \hline
-			FILTER        & 204      & 92.31\%       \\
-			UNION         & 15       & 6.79\%        \\
-			OPTIONAL      & 182      & 82.35\%       \\
-			NOT EXISTS    & 12       & 5.43\%        \\
-			MINUS         & 4        & 1.81\%        \\
-			EXISTS        & 1        & 0.45\%        \\    \hline
-			COUNT         & 44       & 19.91\%       \\
-			MAX           & 2        & 0.90\%        \\
-			MIN           & 1        & 0.45\%        \\
-			AVG           & 1        & 0.45\%        \\
-			SUM           & 2        & 0.90\%        \\
-			GROUP\_CONCAT & 4        & 1.81\%        \\
-			GROUP BY      & 51       & 23.08\%       \\
-			HAVING        & 3        & 1.36\%        \\    \hline
-	\end{tabular}}
-\end{table}
-
-Once we have shown a basic analysis about the presence of keywords in the queries, we analyze the structure of the triple patterns. This is important, because our notion of freshness focuses on predicates. This restricts our approach to triple patterns with a constant in the predicate position. Table~\ref{tab:Pattern} shows that in total 90.35\% of the triple patterns have a constant in the predicate position, which validate our approach of using a model based on the dynamics of predicates.
-
-\begin{table}[h]
-	\centering
-	\caption{Triple patterns (C=Constant, V=Variable).}
-	\label{tab:Pattern}
-	\scalebox{0.9}{
+	\begin{minipage}[b]{0.45\linewidth}
+		\caption{Triple patterns (C=Constant, V=Variable).}
 		\begin{tabular}{lrr}    \hline
 			Pattern & Absolute & Relative \\    \hline
 			V C V   & 751      & 71.73\%    \\
@@ -554,16 +509,13 @@ Once we have shown a basic analysis about the presence of keywords in the querie
 			V P V   & 13       & 1.24\%     \\
 			C P V   & 1        & 0.10\%      \\
 			C P C   & 0        & 0.00\%        \\    \hline
-	\end{tabular}}
-\end{table}
-
-Table~\ref{tab:Pattern} also shows that 7.93\% of triple patterns contain a Property Path in the predicate position. Then we set out to analyze these triples more deeply. Table~\ref{tab:Path} shows the frequency of occurrence of these patterns in our queries. It shows that $ P \rightarrow P * $ (74.70\%) and $ P \rightarrow P + $ (9.64\%) are often applied, which corresponds to our intuition to have a feature that indicates if there are triple patterns offering arbitrary length paths (*PATH). We should also notice that there is no negation at the level of the path. Our feature extractor is able to extract all constants of predicates within paths.
-
-\begin{table}[h]
-	\centering
-	\caption{Structure of navigational Property Paths.}
-	\label{tab:Path}
-	\scalebox{0.9}{
+		\end{tabular}
+		\label{tab:Pattern}
+	\end{minipage}
+	\hspace{1cm}
+	\begin{minipage}[b]{0.45\linewidth}
+		\caption{Structure of navigational Property Paths.}
+		\label{tab:Path}
 		\begin{tabular}{lrr}    \hline
 			Rules                & Absolute & Relative \\    \hline
 			$P \rightarrow P* $   & 62       & 74.70\%     \\
@@ -573,8 +525,11 @@ Table~\ref{tab:Pattern} also shows that 7.93\% of triple patterns contain a Prop
 			$P \rightarrow P? $   & 6        & 7.23\%     \\
 			$P \rightarrow !(P)$ & 0        & 0.00\%        \\
 			$P \rightarrow C $    & 83       & 100.00\%      \\    \hline
-	\end{tabular}}
+		\end{tabular}
+	\end{minipage}
 \end{table}
+
+Table~\ref{tab:Pattern} also shows that 7.93\% of triple patterns contain a Property Path in the predicate position. Then we set out to analyze these triples more deeply. Table~\ref{tab:Path} shows the frequency of occurrence of these patterns in our queries. It shows that $ P \rightarrow P * $ (74.70\%) and $ P \rightarrow P + $ (9.64\%) are often applied, which corresponds to our intuition to have a feature that indicates if there are triple patterns offering arbitrary length paths (*PATH). We should also notice that there is no negation at the level of the path. Our feature extractor is able to extract all constants of predicates within paths.
 
 Finally, we evaluate the dynamics of the results of the queries considering Equation~\ref{eq:delta} between query results of the same query over consecutive versions of Wikidata.
 
@@ -656,152 +611,6 @@ Figure~\ref{graph:changeH} shows for each query how many changes registered over
 	\end{minipage}
 \end{figure}
 
-Figure~\ref{graph:deltas} shows an analysis of the query result monotonicity in the evaluated period. Red dots mean only removed results, greens added, and blues added and removed. It can be clearly seen that query results are not monotonic.
-
-\begin{figure}[h]	
-	\begin{minipage}[b]{0.40\linewidth}
-		\centering	
-		\begin{tikzpicture}[thick, scale=0.5]			
-		\begin{axis}[
-		%title={Temperature dependence of CuSO$_4\cdot$5H$_2$O solubility},
-		xlabel={Version},
-		ylabel={Changes},
-		ymin=0,
-		xtick={0,5,10,15,20,25},
-		legend pos=north west,
-		ymajorgrids=true,
-		grid style=dashed,
-		]
-		
-		\addplot[
-		color=green,
-		mark=square,
-		]
-		coordinates {
-			(1,14)(2,38)(3,27)(4,24)(5,32)(6,23)(7,36)(8,21)(9,24)(10,23)
-		};
-		
-		\addplot[
-		color=green,
-		mark=square,
-		]
-		coordinates {
-			(12,26)(13,26)(14,27)(15,29)(16,23)(17,25)(18,20)(19,24)(20,13)(21,18)(22,31)
-		};
-		
-		\addplot[
-		color=red,
-		mark=square,
-		]
-		coordinates {
-			(1,8)(2,5)(3,5)(4,8)(5,6)(6,7)(7,5)(8,9)(9,9)(10,6)
-		};
-		
-		\addplot[
-		color=red,
-		mark=square,
-		]
-		coordinates {
-			(12,3)(13,7)(14,7)(15,8)(16,7)(17,6)(18,5)(19,6)(20,7)(21,6)(22,10)
-		};
-		
-		\addplot[
-		color=blue,
-		mark=square,
-		]
-		coordinates {
-			(1,93)(2,69)(3,86)(4,84)(5,83)(6,81)(7,86)(8,79)(9,85)(10,86)
-		};
-		
-		\addplot[
-		color=blue,
-		mark=square,
-		]
-		coordinates {
-			(12,76)(13,80)(14,84)(15,80)(16,81)(17,87)(18,87)(19,86)(20,86)(21,82)(22,88)
-		};
-		
-		%\legend{# entities}
-		%\legend{# predicates}
-		%\legend{# literals}
-		%\legend{# blank nodes}			
-		\end{axis}
-		\end{tikzpicture}				
-		\label{graph:deltaV}
-	\end{minipage}
-	\hspace{0.7cm}
-	\begin{minipage}[b]{0.40\linewidth}
-		\centering
-		\begin{tikzpicture}[thick, scale=0.5]
-		\begin{axis}[
-		%title={Temperature dependence of CuSO$_4\cdot$5H$_2$O solubility},
-		xlabel={Queries},
-		ymin=0,
-		legend pos=north west,
-		ymajorgrids=true,
-		grid style=dashed,
-		]
-		
-		\addplot[
-		color=red,
-		mark=square,
-		]
-		coordinates {
-			(1,8)(2,6)(3,6)(4,5)(5,5)(6,5)(7,4)(8,4)(9,4)(10,4)(11,4)(12,4)(13,4)(14,4)(15,3)(16,3)(17,3)(18,3)(19,3)(20,2)(21,2)(22,2)(23,2)(24,2)(25,2)(26,2)(27,2)(28,2)(29,2)(30,2)(31,1)(32,1)(33,1)(34,1)(35,1)(36,1)(37,1)(38,1)(39,1)(40,1)(41,1)(42,1)(43,1)(44,1)(45,1)(46,1)(47,1)(48,1)(49,1)(50,1)(51,1)(52,1)(53,1)(54,1)(55,1)(56,1)(57,1)(58,1)(59,1)(60,1)(61,1)(62,1)(63,1)(64,1)(65,1)(66,1)(67,1)(68,1)(69,1)(70,1)(71,1)(72,1)(73,1)(74,0)(75,0)(76,0)(77,0)(78,0)(79,0)(80,0)(81,0)(82,0)(83,0)(84,0)(85,0)(86,0)(87,0)(88,0)(89,0)(90,0)(91,0)(92,0)(93,0)(94,0)(95,0)(96,0)(97,0)(98,0)(99,0)(100,0)(101,0)(102,0)(103,0)(104,0)(105,0)(106,0)(107,0)(108,0)(109,0)(110,0)(111,0)(112,0)(113,0)(114,0)(115,0)(116,0)(117,0)(118,0)(119,0)(120,0)(121,0)(122,0)(123,0)(124,0)(125,0)(126,0)(127,0)(128,0)(129,0)(130,0)(131,0)(132,0)(133,0)(134,0)(135,0)(136,0)(137,0)(138,0)(139,0)(140,0)(141,0)(142,0)(143,0)(144,0)(145,0)(146,0)(147,0)(148,0)(149,0)(150,0)(151,0)(152,0)(153,0)(154,0)(155,0)(156,0)(157,0)(158,0)(159,0)(160,0)(161,0)(162,0)(163,0)(164,0)(165,0)(166,0)(167,0)(168,0)(169,0)(170,0)(171,0)(172,0)(173,0)(174,0)(175,0)(176,0)(177,0)(178,0)(179,0)(180,0)(181,0)(182,0)(183,0)(184,0)(185,0)(186,0)(187,0)(188,0)(189,0)(190,0)(191,0)(192,0)(193,0)(194,0)(195,0)(196,0)(197,0)(198,0)(199,0)(200,0)(201,0)(202,0)(203,0)(204,0)(205,0)(206,0)(207,0)(208,0)(209,0)(210,0)(211,0)(212,0)(213,0)(214,0)(215,0)(216,0)(217,0)(218,0)(219,0)(220,0)(221,0)
-		};
-		
-		
-		\addplot[
-		color=green,
-		mark=square,
-		]
-		coordinates {
-			(1,13)(2,13)(3,13)(4,12)(5,11)(6,11)(7,10)(8,10)(9,10)(10,10)(11,9)(12,9)(13,9)(14,8)(15,8)(16,8)(17,8)(18,8)(19,8)(20,7)(21,7)(22,7)(23,7)(24,7)(25,7)(26,7)(27,7)(28,7)(29,7)(30,7)(31,6)(32,6)(33,6)(34,6)(35,6)(36,6)(37,6)(38,6)(39,6)(40,6)(41,6)(42,5)(43,5)(44,5)(45,5)(46,5)(47,5)(48,5)(49,5)(50,4)(51,4)(52,4)(53,4)(54,4)(55,4)(56,4)(57,4)(58,4)(59,4)(60,4)(61,4)(62,4)(63,3)(64,3)(65,3)(66,3)(67,3)(68,3)(69,3)(70,3)(71,3)(72,3)(73,3)(74,3)(75,3)(76,3)(77,3)(78,3)(79,2)(80,2)(81,2)(82,2)(83,2)(84,2)(85,2)(86,2)(87,2)(88,2)(89,2)(90,2)(91,2)(92,2)(93,2)(94,2)(95,2)(96,2)(97,2)(98,2)(99,2)(100,2)(101,2)(102,2)(103,2)(104,1)(105,1)(106,1)(107,1)(108,1)(109,1)(110,1)(111,1)(112,1)(113,1)(114,1)(115,1)(116,1)(117,1)(118,1)(119,1)(120,1)(121,1)(122,1)(123,1)(124,1)(125,1)(126,1)(127,1)(128,1)(129,1)(130,1)(131,0)(132,0)(133,0)(134,0)(135,0)(136,0)(137,0)(138,0)(139,0)(140,0)(141,0)(142,0)(143,0)(144,0)(145,0)(146,0)(147,0)(148,0)(149,0)(150,0)(151,0)(152,0)(153,0)(154,0)(155,0)(156,0)(157,0)(158,0)(159,0)(160,0)(161,0)(162,0)(163,0)(164,0)(165,0)(166,0)(167,0)(168,0)(169,0)(170,0)(171,0)(172,0)(173,0)(174,0)(175,0)(176,0)(177,0)(178,0)(179,0)(180,0)(181,0)(182,0)(183,0)(184,0)(185,0)(186,0)(187,0)(188,0)(189,0)(190,0)(191,0)(192,0)(193,0)(194,0)(195,0)(196,0)(197,0)(198,0)(199,0)(200,0)(201,0)(202,0)(203,0)(204,0)(205,0)(206,0)(207,0)(208,0)(209,0)(210,0)(211,0)(212,0)(213,0)(214,0)(215,0)(216,0)(217,0)(218,0)(219,0)(220,0)(221,0)
-		};
-		
-		
-		\addplot[
-		color=blue,
-		mark=square,
-		]
-		coordinates {
-			(1,22)(2,22)(3,22)(4,22)(5,22)(6,22)(7,22)(8,22)(9,22)(10,22)(11,22)(12,22)(13,22)(14,22)(15,22)(16,22)(17,22)(18,22)(19,22)(20,22)(21,22)(22,22)(23,22)(24,22)(25,22)(26,22)(27,22)(28,22)(29,22)(30,22)(31,22)(32,21)(33,21)(34,21)(35,21)(36,21)(37,21)(38,21)(39,21)(40,21)(41,20)(42,20)(43,20)(44,20)(45,20)(46,19)(47,19)(48,19)(49,19)(50,18)(51,18)(52,18)(53,18)(54,16)(55,16)(56,15)(57,15)(58,15)(59,15)(60,15)(61,15)(62,15)(63,14)(64,14)(65,13)(66,13)(67,12)(68,11)(69,11)(70,11)(71,11)(72,11)(73,11)(74,11)(75,11)(76,11)(77,10)(78,10)(79,10)(80,10)(81,9)(82,9)(83,9)(84,9)(85,8)(86,8)(87,8)(88,8)(89,7)(90,7)(91,7)(92,7)(93,7)(94,7)(95,7)(96,7)(97,7)(98,7)(99,7)(100,7)(101,6)(102,6)(103,6)(104,6)(105,6)(106,6)(107,6)(108,6)(109,6)(110,6)(111,5)(112,5)(113,5)(114,5)(115,5)(116,5)(117,5)(118,5)(119,4)(120,4)(121,4)(122,4)(123,4)(124,4)(125,4)(126,4)(127,4)(128,4)(129,4)(130,4)(131,4)(132,4)(133,4)(134,3)(135,3)(136,3)(137,3)(138,3)(139,3)(140,3)(141,2)(142,2)(143,2)(144,2)(145,2)(146,2)(147,2)(148,2)(149,2)(150,2)(151,2)(152,2)(153,2)(154,2)(155,1)(156,1)(157,1)(158,1)(159,1)(160,1)(161,1)(162,1)(163,1)(164,1)(165,1)(166,1)(167,1)(168,1)(169,1)(170,1)(171,1)(172,1)(173,1)(174,1)(175,1)(176,1)(177,1)(178,1)(179,1)(180,0)(181,0)(182,0)(183,0)(184,0)(185,0)(186,0)(187,0)(188,0)(189,0)(190,0)(191,0)(192,0)(193,0)(194,0)(195,0)(196,0)(197,0)(198,0)(199,0)(200,0)(201,0)(202,0)(203,0)(204,0)(205,0)(206,0)(207,0)(208,0)(209,0)(210,0)(211,0)(212,0)(213,0)(214,0)(215,0)(216,0)(217,0)(218,0)(219,0)(220,0)(221,0)
-		};
-		%\legend{# entities}
-		%\legend{# predicates}
-		%\legend{# literals}
-		%\legend{# blank nodes}
-		
-		\end{axis}
-		\end{tikzpicture}
-		\label{graph:deltaH}
-	\end{minipage}
-	\caption{Types of changes by version and query. Only addition of results (green), only elimination of results (red), or both (blue).}
-	\label{graph:deltas}
-\end{figure}
-
-\begin{comment}
-\tikzset{mark options={mark size=0.5}}
-\begin{figure}[h]
-\centering
-\begin{tikzpicture}
-\begin{axis}[%
-clickable coords={(xy): \thisrow{label}},%
-xlabel={Time},
-scatter/classes={%
-c={blue},%+-3
-b={red},%-2
-a={green}}]%+1
-\addplot[scatter,only marks,%
-scatter src=explicit symbolic]%
-table[meta=label] {treschange.dat};
-\end{axis}
-\end{tikzpicture}
-\caption{Query results monotony.}
-\label{graph:changeT}
-\end{figure}
-\end{comment}    
-
 
 \section{Evaluation}
 \label{sec:eval}
@@ -818,34 +627,7 @@ To build the Difference Sets ($\Delta$) for our model we used an approach based 
 Then we configure the parameters of our model. For the time interval, we consider three versions of the dataset equivalent to the last three weeks. As the Transformation Function, we evaluate three basic functions: Maximum, Minimum, and Average. For example, Maximum will take the dynamics of the most dynamic property (used as a predicate in the query) as a feature.
 In addition, given that existing approaches are based on the historical results of the queries, we evaluate the substitution of our model for a historical change indicator that counts how many times the results have changed in the last three weeks.
 
-\subsection{Measures}
-
-Depending on whether the query results really changed, we consider four possible outcomes of this decision:
-
-\begin{enumerate}[label=\roman*]
-	\item \textbf{True positive (tp):} Changed results are detected. Our proposal is correct in its prediction.
-	\item \textbf{False positive (fp):} No changed results are not detected. Our proposal is incorrect in its prediction.
-	\item \textbf{True negative (tn):} No changed results are detected. Our proposal is correct in its prediction.
-	\item \textbf{False negative (fn):} Changed results are not detected. Our proposal is incorrect in its prediction.        
-	
-\end{enumerate}
-
-We measured precision (see Equation~\ref{eq:precision}), recall (see Equation~\ref{eq:recall}) and f-measure ($f_1$) (see Equation~\ref{eq:f1}).
-
-\begin{equation}
-\label{eq:precision}
-precision = \frac{tp}{tp + fp}
-\end{equation}
-
-\begin{equation}
-\label{eq:recall}
-recall = \frac{tp}{tp + fn}
-\end{equation}
-
-\begin{equation}
-\label{eq:f1}
-f_1 = 2 \times \frac{precision \times recall}{precision + recall}
-\end{equation}
+In addition, we train a Machine Learning model to determine the life spam of a query results. To train the model we consider the changes observed in the monitored interval. For each update of the results of a query, we have created an example of training with the previously presented features. The target TTL value that we learn is the time interval during which the results of the query remain fresh from the current update time.
 
 \subsection{Results}
 
