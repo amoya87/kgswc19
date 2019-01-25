@@ -13,6 +13,8 @@
 \usepackage{amsmath}
 \usepgfplotslibrary{clickable}
 
+\newcommand{\ah}[1]{{\color{blue}\textsc{ah:} #1}}
+
 
 \usepackage{listings}
 \lstset{language=SQL,morekeywords={PREFIX,java,rdf,rdfs,url}}
@@ -25,30 +27,28 @@
 
 \begin{document}
 %
-\title{Change estimation of SPARQL queries in Wikidata\thanks{Supported by CONICYT PFCHA/ DOCTORADO BECAS CHILE/2017 - 72180000 and Millennium Institute for Foundational Research on Data.}}
+\title{Estimating the dynamics of SPARQL query results over Wikidata\thanks{Supported by CONICYT PFCHA/ DOCTORADO BECAS CHILE/2017 - 72180000 and Millennium Institute for Foundational Research on Data.}}
 %
 %\titlerunning{Abbreviated paper title}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-\author{Alberto Moya\orcidID{0000-0002-7003-5087} \and
-Aidan Hogan\orcidID{1111-2222-3333-4444}}% \and
-%Jesus P\'erez\orcidID{2222--3333-4444-5555} \and
-%Grethel Coello\orcidID{2222--3333-4444-5555}}
+\author{Alberto Moya \and
+Aidan Hogan\orcidID{0000-0001-9482-1982}}
 %
-\authorrunning{A. Moya et al.}
+\authorrunning{A. Moya and A. Hogan}
 % First names are abbreviated in the running head.
 % If there are more than two authors, 'et al.' is used.
 %
-\institute{Computer Science Department, University of Chile, Chile\\
+\institute{IMFD; DCC, University of Chile\\
 \email{\{amoya,ahogan\}@dcc.uhile.cl}}
 %
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-Linked Open Datasets contain descriptions that change over time. The resources described by these datasets are continuously created, moved, deleted, linked, and unlinked. Applications that leverage Linked Data must be aware of these change dynamics to deliver accurate services. In this work, we tackle the problem of estimating future changes in query results based on query syntax features. We propose a model that exploits the characteristics of RDF to capture the dynamics of the predicates. Our Dynamics Model complements syntax features extracted from queries to assess if query results will change in the near future using classifiers and long future using Multiple Linear Regression techniques. To evaluate our proposal, we select Wikidata as our dataset and we build a curated collection of queries. Our results show that the accuracy of our proposal approaches that obtained using information on the historical evolution of the query results but at a lower cost.
+In this work, we tackle the problem of estimating future changes in SPARQL query results over dynamic datasets; such work has applications for caching and remote synchronization. Our proposal is based on syntactic query features and (optionally) knowledge of the dynamics of predicates in the underlying dataset; the resulting model can be used to predict (1) whether or not the results for a query will change in the near future using classifiers, and (2) when they might change (if at all) using linear regression. To evaluate our proposal, we select Wikidata as our dataset and build a curated collection of real-world SPARQL queries. Our results show that the accuracy of the predictions of our proposed model is competitive with that obtained using knowledge of the complete historical evolution of the query results but at a lower cost.
 
-\keywords{Change estimation \and SPARQL query \and Link Data dynamics.}
+\keywords{SPARQL \and Linked Data \and Dynamics \and Wikidata}
 \end{abstract}
 %
 %
@@ -56,18 +56,17 @@ Linked Open Datasets contain descriptions that change over time. The resources d
 \section{Introduction}
 \label{sec:intro}
 %
-Many applications that consume Linked Data (LD) face challenges related to changes in the underlying data, whose key is keeping data fresh. Since datasets change over time, long-running applications that cache and repeatedly use query results obtained from a SPARQL endpoint may resubmit the queries regularly to ensure up-to-dateness. As a result, applications often get the same results in several query executions, resulting in an unnecessary computation, and other times, they give the user stale results when the backend data change between re-executions. 
+Many applications that consume Linked Data (LD) face challenges related to remote changes in the underlying data. By caching remote data and using the cache whenever possible, client-side caches reduce the network traffic between clients and servers, the load on servers, and the average user-perceived latency of responses. However, since datasets change over time, for caches to be useful, cached copies should be updated when the underlying data that they reflect change; predicting such remote changes, however, is a challenging problem, particularly when data are accessed through a SPARQL endpoint.
 
-By caching the answers of queries and using the cached replies whenever possible, client-side caches reduce the network traffic between clients and servers, the load on servers, and the average user-perceived latency of query processing. However, for caches to be useful, cached copies should be updated when the data that gave rise to it change.
-Ensuring a strong consistency in which no stale copy of the modified document will ever be returned to the user could be expensive. Thus, several weak consistency approaches have been proposed that try to keep the local data of the applications updated at lower cost~\cite{KnuthHS16,DividinoGS15,NishiokaS17}.
+Since datasets change over time, long-running applications that cache and repeatedly use query results obtained from an external SPARQL endpoint may resubmit the queries regularly to ensure up-to-dateness. As a result, without further information as to the dynamics of a particular SPARQL query, applications face the choice of either performing frequent query executions that may be redundant and repeatedly return the same results (aiming for stronger consistency at the cost of more frequent updates), or performing infrequent query executions that may lead to stale data being persisted in the application when the underlying sources change (accepting weaker consistency at the cost of less fresh data). Given the costs on clients and servers of repetitive requests served over the Web  and the potential efficiency gains offered by local caches, several weak consistency approaches have been proposed that try to keep the local data of the applications updated at lower cost by predicting changes~\cite{KnuthHS16,DividinoGS15,NishiokaS17}.
 
-Some works have proposed to learn from historical entity evolution, but a query could involve many entities. Considering the historical evolution of all entities relating to a query is expensive because it is necessary to have the previous complete versions of data and to obtain the results of the execution of the query in each version. In addition, recent works have explored the dynamics of the LD with the intention of finding patterns that allow for characterizing, recognizing, and predicting changes~\cite{KaferAUOH13,NishiokaS16,GonzalezH18} finding some general correlations, such as, the domains, predicates, and schema~\cite{KaferAUOH13,NishiokaS17,UmbrichHHPD10}. Based on dynamic knowledge, hybrid approaches have been developed to return fresher query results and at the same time speed up queries, but freshness estimates are a major and still current challenge, because of the difficulty of predicting the underlying dynamics on the growing Web of Data.
+Some works \ah{Which? Cite at the end of the sentence} have proposed to predict dynamics based on the historical evolution of entities, but following such an approach for SPARQL queries is expensive because (1) a SPARQL query may involve potentially many entities; and (2) it is necessary to have the previous complete versions of data to analyse the entities relevant to a query. Recent works have explored the dynamics of Linked Data with the intention of finding patterns that allow for characterizing, recognizing, and predicting changes based on analysis of the domains, predicates, and schema~\cite{UmbrichHHPD10,KaferAUOH13,NishiokaS16,NishiokaS17,GonzalezH18}. Among these works, we can find hybrid approaches that have been developed to return fresher query results with faster response times by decomposing a query into dynamic sub-queries answered remotely, and static sub-queries answer over local caches~\cite{UmbrichKHP12}, but such an approach only focuses on estimating the dynamics of individual triple patterns, and does not consider, for example, query operators. More generally, coping with changes in remote data still presents a major challenge for applications leveraging dynamic Linked Data.
 
-In this work, we tackle the problem of estimating future changes in query results based on data statistics and methods from Machine Learning. We devise a solution where we do not have complete information from the past, but a reduced statistical model that summarizes the historical dynamics based on predicates. We compute a predictive Dynamics Model for 23 versions of the Wikidata knowledge graph~\cite{VrandecicK14}, evaluating its suitability for predicting future changes in the query results. We select Wikidata as: (1) it provides a history of weekly versions that we can use to evaluate predictions and (2) it is edited by thousands of users, which means that significant changes are observed weekly.
+In this work, we tackle the problem of estimating future changes in query results based on query features, high-level statistics about the dynamics of predicates, as well as classification and regression methods from Machine Learning. We thus propose a solution where we do not have complete historical information about the results of a query, but rather a much more lightweight statistical model that saves on space and obviates the need to compute query results for multiple past versions. In order to assess the predictions made by our proposal, we perform experiments over 23 weekly versions of the Wikidata knowledge graph~\cite{VrandecicK14}, evaluating various configurations in terms of the accuracy for predicting future changes in the query results; we select Wikidata as: (1) it provides a history of weekly versions that we can use to evaluate predictions; (2) it is edited by thousands of users, which means that significant changes are observed weekly; (3) it provides a large-scale diverse dataset; (4) it receives millions of queries on a daily basis~\cite{MalyshevKGGB18}; and (5) a diverse set of exemplar SPARQL queries has been proposed by the community that we can use for our evaluation.
 
-In summary, the \textbf{contributions} of this paper are: (i) we build a dataset of real queries for Wikidata, (ii) we provide an analysis of the evolution of the results of those queries over 23 weekly versions of Wikidata, (iii) we evaluated several classifiers to judges whether or not the results of a query will change and regression techniques to determine specifically when a query results will change using a predicate-based Dynamics Model and features from the syntax of the query, and (iv) we show that the proposed features and classifier work well, and our results are close to the more expensive previous approaches that assume full knowledge of historical data.
+The contributions of this paper are thus as follows: (i) we propose a supervised method that uses static query features and suitable classifiers to predict whether or not results will change in a given point in the near future; (ii) we propose to augment this model with lightweight statistics of the dynamics of predicates; (iii) we further experiment with linear regression models to predict when results will change; (iv) we prepare a benchmark for predicting the dynamics of query results based on 23 weekly versions of Wikidata and a set of \ah{XXX} real-world SPARQL queries; (v) we use this benchmark to compare the results obtained by our lightweight models versus an ``ideal model'' that knows of changes in the query's results for previous versions. Our results show that our proposed models are competitive with the more expensive ideal model.
 
-The rest of this document is organized as follows: In Section~\ref{sec:related}, we review related works. Section~\ref{sec:preliminar} provides the formal definition of the problem. Section~\ref{sec:approach} describes our proposal. In Section~\ref{sec:data}, we explain our datasets. Section~\ref{sec:eval} presents the design and results of the experiments. We conclude and review future directions in Section~\ref{sec:conclusion}.
+The rest of this document is organized as follows: In Section~\ref{sec:related}, we review related works. Section~\ref{sec:preliminar} provides a formal definition of the problem. Section~\ref{sec:approach} describes our proposed models. In Section~\ref{sec:data}, we describe our evaluation data and queries based on Wikidata. Section~\ref{sec:eval} presents the design and results of the experiments. We conclude and review future directions in Section~\ref{sec:conclusion}.
 
 %
 \section{Related Work}
