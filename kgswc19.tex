@@ -13,7 +13,29 @@
 \usepackage{amsmath}
 \usepgfplotslibrary{clickable}
 
+\newcommand{\Iris}{\ensuremath{\mathbf{I}}}
+\newcommand{\Lits}{\ensuremath{\mathbf{L}}}
+\newcommand{\Bnodes}{\ensuremath{\mathbf{B}}}
+\newcommand{\Vars}{\ensuremath{\mathbf{V}}}
+
+\newcommand{\da}{\ensuremath{:\nolinebreak\mkern-1.2mu\nolinebreak=}}
+
 \newcommand{\ah}[1]{{\color{blue}\textsc{ah:} #1}}
+
+\usepackage{xcolor}
+\usepackage{hyperref}
+\definecolor{dark-blue}{rgb}{0.0,0.0,0.2}
+\definecolor{dark-green}{rgb}{0.0,0.2,0.0}
+\definecolor{dark-red}{rgb}{0.2,0.0,0.0}
+\hypersetup{
+    colorlinks, linkcolor={dark-red},
+    citecolor={dark-green}, urlcolor={dark-blue},
+    pdftitle={Estimating the dynamics of SPARQL query results over Wikidata},    % title
+    pdfauthor={Alberto Moya, Aidan Hogan},     % author
+    pdfsubject={KGSWC 2019},   % subject of the document
+    pdfkeywords={SPARQL;} {Linked Data;} {Dynamics;} {Wikidata;}, % list of keywords
+}
+
 
 
 \usepackage{listings}
@@ -27,7 +49,7 @@
 
 \begin{document}
 %
-\title{Estimating the dynamics of SPARQL query results over Wikidata\thanks{Supported by CONICYT PFCHA/ DOCTORADO BECAS CHILE/2017 - 72180000 and Millennium Institute for Foundational Research on Data.}}
+\title{Estimating the dynamics of\\SPARQL query results over Wikidata\thanks{This work was supported by CONICYT PFCHA, Doctorado Becas Chile/2017 -- 72180000, the Millennium Institute for Foundational Research on Data (IMFD) and FONDECYT Grant No. 1181896.}}
 %
 %\titlerunning{Abbreviated paper title}
 % If the paper title is too long for the running head, you can set
@@ -56,15 +78,15 @@ In this work, we tackle the problem of estimating future changes in SPARQL query
 \section{Introduction}
 \label{sec:intro}
 %
-Many applications that consume Linked Data (LD) face challenges related to remote changes in the underlying data. By caching remote data and using the cache whenever possible, client-side caches reduce the network traffic between clients and servers, the load on servers, and the average user-perceived latency of responses. However, since datasets change over time, for caches to be useful, cached copies should be updated when the underlying data that they reflect change; predicting such remote changes, however, is a challenging problem, particularly when data are accessed through a SPARQL endpoint.
+Many applications that consume Linked Data (LD) face challenges related to remote changes in the underlying data. Client-side caches can reduce the network traffic between clients and servers, the load on servers, and the average latency of responses. However, since datasets change over time, for caches to be useful, they should be updated when the underlying data that they reflect change; predicting such remote changes, however, is a challenging problem, particularly when data are accessed as the results of queries to a SPARQL endpoint.
 
-Since datasets change over time, long-running applications that cache and repeatedly use query results obtained from an external SPARQL endpoint may resubmit the queries regularly to ensure up-to-dateness. As a result, without further information as to the dynamics of a particular SPARQL query, applications face the choice of either performing frequent query executions that may be redundant and repeatedly return the same results (aiming for stronger consistency at the cost of more frequent updates), or performing infrequent query executions that may lead to stale data being persisted in the application when the underlying sources change (accepting weaker consistency at the cost of less fresh data). Given the costs on clients and servers of repetitive requests served over the Web  and the potential efficiency gains offered by local caches, several weak consistency approaches have been proposed that try to keep the local data of the applications updated at lower cost by predicting changes~\cite{KnuthHS16,DividinoGS15,NishiokaS17}.
+Since datasets change over time, long-running applications that cache and repeatedly use query results obtained from an external SPARQL endpoint may resubmit the queries regularly to ensure up-to-dateness. As a result, without further information as to the dynamics of a particular SPARQL query, applications face the choice of either performing frequent query executions that may be redundant and repeatedly return the same results (aiming for stronger consistency at the cost of more frequent updates), or performing infrequent query executions that may lead to stale data being persisted in the application when the underlying sources change (accepting weaker consistency to improve efficiency/scalability). Given the costs on clients and servers of repetitive requests served over the Web  and the potential efficiency gains offered by local caches, several weak consistency approaches have been proposed that try to keep the local data of the applications updated at lower cost by predicting changes~\cite{KnuthHS16,DividinoGS15,NishiokaS17}.
 
 Some works \ah{Which? Cite at the end of the sentence} have proposed to predict dynamics based on the historical evolution of entities, but following such an approach for SPARQL queries is expensive because (1) a SPARQL query may involve potentially many entities; and (2) it is necessary to have the previous complete versions of data to analyse the entities relevant to a query. Recent works have explored the dynamics of Linked Data with the intention of finding patterns that allow for characterizing, recognizing, and predicting changes based on analysis of the domains, predicates, and schema~\cite{UmbrichHHPD10,KaferAUOH13,NishiokaS16,NishiokaS17,GonzalezH18}. Among these works, we can find hybrid approaches that have been developed to return fresher query results with faster response times by decomposing a query into dynamic sub-queries answered remotely, and static sub-queries answer over local caches~\cite{UmbrichKHP12}, but such an approach only focuses on estimating the dynamics of individual triple patterns, and does not consider, for example, query operators. More generally, coping with changes in remote data still presents a major challenge for applications leveraging dynamic Linked Data.
 
 In this work, we tackle the problem of estimating future changes in query results based on query features, high-level statistics about the dynamics of predicates, as well as classification and regression methods from Machine Learning. We thus propose a solution where we do not have complete historical information about the results of a query, but rather a much more lightweight statistical model that saves on space and obviates the need to compute query results for multiple past versions. In order to assess the predictions made by our proposal, we perform experiments over 23 weekly versions of the Wikidata knowledge graph~\cite{VrandecicK14}, evaluating various configurations in terms of the accuracy for predicting future changes in the query results; we select Wikidata as: (1) it provides a history of weekly versions that we can use to evaluate predictions; (2) it is edited by thousands of users, which means that significant changes are observed weekly; (3) it provides a large-scale diverse dataset; (4) it receives millions of queries on a daily basis~\cite{MalyshevKGGB18}; and (5) a diverse set of exemplar SPARQL queries has been proposed by the community that we can use for our evaluation.
 
-The contributions of this paper are thus as follows: (i) we propose a supervised method that uses static query features and suitable classifiers to predict whether or not results will change in a given point in the near future; (ii) we propose to augment this model with lightweight statistics of the dynamics of predicates; (iii) we further experiment with linear regression models to predict when results will change; (iv) we prepare a benchmark for predicting the dynamics of query results based on 23 weekly versions of Wikidata and a set of \ah{XXX} real-world SPARQL queries; (v) we use this benchmark to compare the results obtained by our lightweight models versus an ``ideal model'' that knows of changes in the query's results for previous versions. Our results show that our proposed models are competitive with the more expensive ideal model.
+The contributions of this paper are thus as follows: (i) we propose a supervised method that uses static query features and suitable classifiers to predict whether or not results will change in a given point in the near future; (ii) we propose to augment this model with lightweight statistics of the dynamics of predicates; (iii) we further experiment with linear regression models to predict when results will change; (iv) we prepare a benchmark for predicting the dynamics of query results based on 23 weekly versions of Wikidata and a set of 221 real-world SPARQL queries; (v) we use this benchmark to compare the results obtained by our lightweight models versus an ``clairvoyant model''~\cite{KnuthHS16} that knows of changes in the query's results for previous versions. Our results show that our proposed models are competitive with the costly clairvoyant model.
 
 The rest of this document is organized as follows: In Section~\ref{sec:related}, we review related works. Section~\ref{sec:preliminar} provides a formal definition of the problem. Section~\ref{sec:approach} describes our proposed models. In Section~\ref{sec:data}, we describe our evaluation data and queries based on Wikidata. Section~\ref{sec:eval} presents the design and results of the experiments. We conclude and review future directions in Section~\ref{sec:conclusion}.
 
@@ -73,166 +95,171 @@ The rest of this document is organized as follows: In Section~\ref{sec:related},
 \label{sec:related}
 %
 
-Many applications can benefit from change prediction in query results. Both, Smart Caching to save computational resources and Hybrid Architectures to deliver fresh results in less time. Several techniques have been developed following strong consistency, based on HTTP metadata~\cite{fielding2rfc} and notifications~\cite{PassantM10,Fitzpatrick10,TrampFEA10}. Other works seek weak consistency based on probabilities, such as Empirical Distributions~\cite{NeumaierU16}, Poisson Processes~\cite{UmbrichHHPD10}, and Markov Chains~\cite{UmbrichMP15}, as well as other works based on heuristics~\cite{AliciAOCU12,UmbrichMP15,KnuthHS16}, metrics~\cite{DividinoGS15,KnuthHS16,AkhtarAL17}, and Machine Learning~\cite{NishiokaS17,GonzalezH18}. In the case of metadata, many works~\cite{UmbrichHHPD10,DividinoKG14,Kjernsmo15,NeumaierU16} have show that these data are often not provided or are wrong. In the case of notifications, several tools have been developed, such as rsine~\cite{MaderMS14} and Boca~RDF~\cite{MissierACDG07}, but these mechanisms must keep a subscriber list and it cause scalability problems. The rest of the approaches achieve interesting results, but the main deficiency in these approaches is that their quality depends on having a long and complete history of updates. In the case of ML-based approaches, they constitute a general framework where important improvements can be achieved by incorporating relevant features to the models. In our approach, we propose an ML-based solution that dispenses with the expensive history of updates by a lighter model with statistics from this history and syntactic query features.
+A variety of works have addressed the issue of modeling and consuming dynamic Linked Data from a broad range of perspectives~\cite{PassantM10,TrampFEA10,UmbrichHHPD10,UmbrichKL10,KaferAUOH13,DividinoSGG13,DividinoKG14,Kjernsmo15,NishiokaS16,GonzalezH18}. One of the major challenges considered is that of keeping cached copies of remote dynamic data -- cached for reasons of efficiency and scalability -- up-to-date on the consumer side, which we refer to as the synchronization problem.
 
-Some works have tried to understand the dynamics of the LOD datasets~\cite{UmbrichHHPD10,UmbrichKL10,KaferAUOH13,DividinoSGG13,NishiokaS16}. Some features found to describe the dynamics of a resource are Pay-Level Domain (PLD)~\cite{NishiokaS16,NishiokaS17}, predicates~\cite{KaferAUOH13,NishiokaS17}, and Characteristic Sets (CS)~\cite{NishiokaS16,GonzalezH18}. This knowledge could be used to estimates the freshness of cached data. Umbrich et al.~\cite{UmbrichKHP12,UmbrichKPPH12,ekawUmbrichKHP12} identified variants to obtain knowledge about freshness for different query patterns based on predicates. In more recent work Dehghanzadeh et al.~\cite{DehghanzadehPKUHD14} proposed a solution to estimate the freshness using cardinality estimation techniques based on predicates and CS. However, to the best of our knowledge, there is no proposal to estimate the freshness of cached query results using Machine Learning models based on syntactic features from queries and reduced historical statistics.
+Some works have addressed the synchronization problem on the publisher side, proposing notification mechanisms that keep registered consumers informed about relevant changes to the data~\cite{MissierACDG07,PassantM10,TrampFEA10,MaderMS14,webSub18}; although such approaches may facilitate strong consistency -- meaning that consumers are kept up-to-date with the remote data on the publisher side -- they centralize the burden  of synchronization on the publisher, potentially leading to scalability issues. 
+
+On the other hand, a variety of works have looked at building models of remote data that can help to predict which data are most dynamic, and which are most static, indicating which subsets of the data may need be refreshed from the remote source more often~\cite{PassantM10,TrampFEA10,UmbrichHHPD10,UmbrichKL10,KaferAUOH13,DividinoSGG13,NishiokaS16,GonzalezH18}; such works consider changes in RDF datasets at differing levels of granularity, including documents~\cite{KaferAUOH13}, domains~\cite{KaferAUOH13,NishiokaS16,NishiokaS17}, predicates~\cite{KaferAUOH13,NishiokaS17}, characteristic sets\footnote{A characteristic set is the set of predicate terms used to describe a given subject~\cite{NeumannM11}.}~\cite{NishiokaS16,GonzalezH18}, etc. Features at different levels of granularity can be fed into different predictive models based on Poisson Processes~\cite{UmbrichHHPD10}, Markov Chains~\cite{UmbrichMP15}, Empirical Distributions~\cite{NeumaierU16}, Machine Learning classification and regression~\cite{NishiokaS17,GonzalezH18}, as well as a variety of other heuristics~\cite{AliciAOCU12,UmbrichMP15,KnuthHS16} and metrics~\cite{DividinoGS15,KnuthHS16,AkhtarAL17}. Such approaches obviate the need for a subscription/notification mechanism. On the other hand, to ensure strong consistency in the presence of highly dynamic data, consumers may need to conservatively send a great many refresh requests to the server, which may be even more costly than a subscription/notification mechanism; hence such approaches are better suited for scenarios where weak consistency is more acceptable.
+
+
+% queries: PassantM10, SPARQL push, 
+%  
+
+Specifically regarding the dynamics of SPARQL query results, Passant and Mendes~\cite{PassantM10} proposed \textsc{sparqlPuSH} as a notification framework based  on \textsc{PubSubHubBub} (recently standardized as \textsc{WebSub}~\cite{webSub18}) aiming for strong consistency. On the other hand, aiming for weak consistency, Umbrich et al.~\cite{UmbrichKHP12,UmbrichKPPH12,ekawUmbrichKHP12} proposed various methods to obtain knowledge about dynamics for different query patterns, mainly based on predicates. Dehghanzadeh et al.~\cite{DehghanzadehPKUHD14} later proposed a method to estimate the freshness using cardinality estimation techniques based on predicates and characteristic sets. Combining the notion of subscription-based notifications and predicting dynamics, Knuth et al.~\cite{KnuthHS16} propose a middleware to which consumers may subscribe and that periodically ranks and schedules refreshes for queries according to policies that take into account how likely the results are to be stale, how long ago the query was last refreshed, how many results previously changed, how long the query takes to run, etc. 
+
+Our proposal aims to model the dynamics of SPARQL query results in order to predict (1) whether or not the results will have changed in a fixed point in the near future and,  (2) when the results will change. Our work thus complements existing works aiming for weak consistency, but rather investigates the potential of using static features of a query as a lightweight alternative with the intuition that, for example, queries with more triple patterns or certain query operators are more likely to have dynamic results. For the purposes of comparison, we complement these static features with further knowledge of the dynamics of predicates~\cite{UmbrichKHP12,UmbrichKPPH12,ekawUmbrichKHP12,DehghanzadehPKUHD14} and knowledge of how results for the input query have changed over past versions~\cite{KnuthHS16}, as considered in previous works. We feed these data into Machine Learning classification and regression models to predict future changes (hence, for the purposes of supervised learning, we require knowledge of the changes of some queries over time, though not necessarily for the input query). The benefits of such an approach can be seen in a number of ways: (i) as complementing existing approaches; (ii) as an alternative to predicate-based statistics, which requires analysis of prior versions of the underlying data; (iii) as an alternative to historical results, which requires having a record of (or computing at runtime) the results of the query over several historical versions. We further remark that, to the best of our knowledge, no existing work aims to predict the dynamics of SPARQL query results using Machine Learning models.
 
 %
 \section{Preliminaries: RDF and SPARQL}
 \label{sec:preliminar}
 
-According to the LD principles, the data published on the Web must be described using the Resource Description Framework (RDF). RDF is a conceptual model based on directed graphs that serves to provide descriptive information about the resources on the Web. The RDF nodes correspond to resources, literals (strings), or blank nodes, which model variables in the graph. Resources are identified by an Internationalized Resource Identifier (IRI). The nodes are linked through labeled and directed arcs, which represent semantic relationships.
+RDF is a conceptual data model based on directed graphs that can be used to describe resources on the Web. \emph{RDF terms} are elements of the set $\Iris \cup \Bnodes \cup \Lits$ composed of IRIs $\Iris$, literals $\Lits$, and blank nodes $\Bnodes$. A tuple $ (s, p, o) \in (\Iris \cup  \Bnodes)  \times (\Iris)  \times  (\Iris \cup \Bnodes \cup  \Lits)$  is called an \emph{RDF triple}, where $s$ is called \emph{subject}, $p$ is called \emph{predicate}, and $o$ is called \emph{object}. An \emph{RDF graph} is a set of RDF triples.
 
-\begin{definition}[RDF Triple and Dataset]
-	Let I, L, and B be disjoint sets of IRIs, literals, and blank nodes respectively. A tuple $ (s, p, o) \in (I \cup  B)  \times (I)  \times  (I \cup  B \cup  L)$  is called an RDF $ triple $, where $ s $ is called subject, $ p $ is called predicate, and $ o $ is called object. An RDF $dataset$ is a set of RDF $triples$.
-\end{definition}
+SPARQL is the recommended query language to retrieve and manipulate data stored in the RDF format. In this work, we focus on SPARQL \texttt{SELECT} queries, where we will first define a SPARQL 1.0 query. Let $\Vars$ be a set of variables disjoint from the set of RDF terms. A \emph{SPARQL expression} is built recursively as follows. (1) A \emph{triple pattern} $t \in  (\Iris \cup \Bnodes \cup \Lits \cup \Vars) \times (\Iris \cup \Vars) \times (\Iris \cup \Lits \cup \Bnodes \cup \Vars)$ is an \emph{expression}. (2) If $Q_1$ and $Q_2$ are expressions and $R$ is a filter condition, then $Q_1$ \texttt{FILTER} $R$, $Q_1$ \texttt{UNION} $Q_2$, $Q_1$ \texttt{OPTIONAL} $Q_2$, $Q_1$ \texttt{AND} $Q_2$ are $expressions$. Finally, if $Q$ is an expression, $V$ a list of variables and $\Delta$ a boolean value, $\texttt{SELECT}_V^\Delta Q$ is a SPARQL \texttt{SELECT} query, where $V$ denotes the projected variables, and $\Delta$ the \texttt{DISTINCT} option that when true, removes duplicate results. The semantics of a SPARQL \texttt{SELECT} query $Q$ is defined in terms of its \emph{evaluation} over an RDF graph $G$, denoted $Q(G)$, giving a set of partial mappings from projected variables to the set $\Iris \cup \Lits \cup \Bnodes$; we refer to P{\'{e}}rez et al.~\cite{PerezAG09} for definitions. (According to the standard, a SPARQL query is evaluated over a set of \emph{named graphs}; however, since the Wikidata query service indexes data in one RDF graph, to keep discussion concise, we consider RDF graphs, though our methods can be generalized in a straighforward manner to RDF datasets/named graphs.)
 
-SPARQL is the recommended query language to retrieve and manipulate data stored in the RDF format. In this work, we focus on SPARQL SELECT queries, which return the set of variables and their mapping results. Here we define a SPARQL 1.0 query. 
+Our method supports SPARQL 1.1 \texttt{SELECT} queries, which allow a variety of additional features. One key feature in this extension is that of \textit{property paths}, which allows for matching arbitrary length paths in an RDF graph, potentially returning or matching the endpoints of the path. An IRI $p$ is a \emph{path expression}; if $e$, $e_1$ and $e_2$ are path expressions, then $\texttt{\^{}}e$ (inverse of $e$), $e_1 \texttt{/} e_2$ ($e_1$ followed by $e_2$), $e_1 \texttt{|} e_2$ ($e_1$ or $e_2$), $e\texttt{*}$ (zero or more $e$), $e\texttt{+}$ (one or more $e$), $e\texttt{?}$ (zero or one $e$), and $\texttt{(}$e$\texttt{)}$ (parentheses used for precedence) are also \textit{path expressions}; finally, if $p$, $p_1$, $\ldots$ $p_n$ are IRIs, then $\texttt{!}p$, $\texttt{!}\texttt{(}p_1 \texttt{|} \ldots \texttt{|} p_n\texttt{)}$ and $\texttt{!}\texttt{(}p_1 \texttt{|} \ldots \texttt{|} p_k \texttt{|}  \texttt{{\^{}}}p_{k+1} \texttt{|} \ldots \texttt{|} \texttt{{\^{}}}p_n\texttt{)}$ for $k+1 \leq n$ (negated property sets) are path expressions. Thereafter, a \textit{path pattern} $(s,e,o)$ where $e$ is a path expression is an expression. Other features supported in SPARQL~1.1 include sub-queries, negation, aggregation, value binding, and so forth; for brevity, we do not introduce definitions for all such features.
 
-\begin{definition}[SPARQL expression]
-	Let V be a set of variables disjoint from $U \cup B \cup L$. A SPARQL $expression$ is built recursively as follows. (1) A triple $pattern t \in  (U \cup V ) \times (U \cup V ) \times (L \cup U \cup V )$ is an $expression$. (2) If $Q_1$ and $Q_2$ are $expressions$ and R is a filter condition, then $Q_1$ FILTER R, $Q_1$ UNION $Q_2$, $Q_1$ OPTIONAL $Q_2$, $Q_1$ AND $Q_2$ are $expressions$.
-\end{definition}
 
-A triple $ pattern $ in the second position can contain an expression called \textit{Property Paths} since SPARQL~1.1 to allow for navigational querying over RDF graphs. Other features at SPARQL~1.1 will be seen in experiments.
+%\begin{table}
+%\centering
+%	\begin{tabular}{ll}    \hline
+%		Rules &  \\    \hline
+%		e $\rightarrow$ p & a predicate \\
+%		
+%		e $\rightarrow$ \^{}e    &  inverse path \\
+%		
+%		e $\rightarrow$ e $/$ e    &  a path of $ e_1 $ followed by $ e_2 $\\
+%		
+%		e $\rightarrow$ e $\mid$ e    &  a path of $ e_1 $ or $ e_2 $ \\
+%		
+%		e $\rightarrow$ e*    &  a path of zero or more $ e $ \\
+%		
+%		e $\rightarrow$ e+    &  a path of one or more $ e $ \\
+%		
+%		e $\rightarrow$ e?    &  a path of zero or one $ e $ \\
+%		
+%		e $\rightarrow$ !p    &  any predicate not $ p $ \\
+%		
+%		e $\rightarrow$ !( p1,...,pk, \^{}p1,...,\^{}pk)    &  any (inverse) predicate not listed \\
+%		
+%		e $\rightarrow$ ( e )    &  brackets used for grouping \\    \hline
+%	\end{tabular}
+%	\caption{Property path syntax}
+%\end{table}
+%
+%\begin{definition}[Property Paths]
+%	\label{eq:pp}
+%	Property Paths expressions are defined by the grammar:\\
+%	
+%	
+%	
+%	where $p, p1,...,pk$ are IRIs in $I$.
+%\end{definition}
 
-\begin{definition}[Property Paths]
-	\label{eq:pp}
-	Property Paths expressions are defined by the grammar:\\
-	
-	\begin{tabular}{ll}    \hline
-		Rules &  \\    \hline
-		e $\rightarrow$ p & a predicate \\
-		
-		e $\rightarrow$ \^{}e    &  inverse path \\
-		
-		e $\rightarrow$ e $/$ e    &  a path of $ e_1 $ followed by $ e_2 $\\
-		
-		e $\rightarrow$ e $\mid$ e    &  a path of $ e_1 $ or $ e_2 $ \\
-		
-		e $\rightarrow$ e*    &  a path of zero or more $ e $ \\
-		
-		e $\rightarrow$ e+    &  a path of one or more $ e $ \\
-		
-		e $\rightarrow$ e?    &  a path of zero or one $ e $ \\
-		
-		e $\rightarrow$ !p    &  any predicate not $ p $ \\
-		
-		e $\rightarrow$ !( p1,...,pk, \^{}p1,...,\^{}pk)    &  any (inverse) predicate not listed \\
-		
-		e $\rightarrow$ ( e )    &  brackets used for grouping \\    \hline
-	\end{tabular}
-	
-	where $p, p1,...,pk$ are IRIs in $I$.
-\end{definition}
-
-\section{Our Approach}
+\section{Predicting the Dynamics of Query Results}
 \label{sec:approach}
 
-Next, we formalize the problem addressed in this work and present our proposed solution.
+We consider a dynamic RDF graph to be a sequence of $n$ versions of an RDF graph denoted $\mathcal{G} \da ( G_1, \ldots, G_n )$; in practice, we assume these versions to have regular intervals (e.g., hourly, daily, weekly, etc.). Further given a SPARQL (1.1) \texttt{SELECT} query $Q$, we would like to have knowledge of the dynamics of its results. The first such problem we consider -- which we call One Shot Change (OSC) -- accepts $\mathcal{G}$, $Q$ and a positive integer $k$ as input and outputs a boolean value predicting whether or not the results will change from $G_n$ to some future version $G_{n+k}$ (i.e., $Q(G_n) \neq Q(G_{n+k})$?). The second (more difficult) problem -- which we call Time-To-Live (TTL) -- accepts only $\mathcal{G}$ and $Q$ and outputs a positive integer $k$ as a prediction for the lowest such value where $Q(G_n) \neq Q(G_{n+k})$.
 
-\subsection{Problem Definition and Proposed Solution}
+\ah{How do we define quality under bag semantics, without \texttt{DISTINCT}? Do we consider equality of unique results, or multiplicity of results?}
 
-For this work, we consider a dynamic RDF dataset, denoted by $\mathcal{D}$. In addition, we assume that we have consecutive sequence of $m$ past versions $\mathcal{D} = (d_1, d_2, ..., d_m)$ constituting different revisions fetched at regular intervals. We also consider a SPARQL SELECT query $q$, of which we would like to know if its results are going to be valid for a long time. For that, we have the results of $q$ on each of the $m$ past versions of $\mathcal{D}$ and we need to know when we should update it. Then, we call $q(d_i)$ the result of executing the query $q$ on the $d_i$ version of $\mathcal{D}$.\\
+%Let delta ($\delta$) be a function to compute the binary dissimilarity between two results for a query $q$ with the following expression:
+%
+%\begin{equation}
+%\label{eq:delta}
+%\delta(q(d_i), q(d_j)) = \begin{cases}
+%0 & q(d_i) = q(d_j) \\
+%1 & q(d_i) \neq q(d_j) 
+%\end{cases}
+%\end{equation}
+%
+%\begin{example}
+%	\label{ex:dataset}    
+%	Consider the following example of seven versions of a RDF dataset. Also, consider the queries~\ref{lst:sparql0}, \ref{lst:sparql1} and \ref{lst:sparql2}.
+%\end{example}
+%
+%\setlength{\tabcolsep}{6pt}
+%\begin{tabular}{l l l}    \hline	
+%	\multicolumn{3}{c}{versions $d_1$ and $d_2$} \\    \hline
+%	:Atlantic\_Ocean  & :instance\_of  & ocean          \\
+%	:Atlantic\_Ocean  & :temperature   & 40$\degree$F          \\
+%	:Atlantic\_Ocean  & :area          & $10^7\pm10^3$ $km^2$ \\
+%	:Atlantic\_Ocean  & :image         & AOcean1.png    \\    \hline
+%	\multicolumn{3}{c}{versions $d_3$, $d_4$ and $d_5$} \\    \hline
+%	:Atlantic\_Ocean  & :instance\_of  & ocean          \\
+%	:Atlantic\_Ocean  & :temperature   & 50$\degree$F             \\
+%	:Atlantic\_Ocean  & :area          & $10^7\pm10^3$ $km^2$ \\
+%	:Atlantic\_Ocean  & :image         & AOcean1.png    \\    \hline
+%	\multicolumn{3}{c}{versions $d_6$ and $d_7$} \\    \hline
+%	:Atlantic\_Ocean  & :instance\_of  & ocean          \\
+%	:Atlantic\_Ocean  & :temperature   & 60$\degree$F    \\
+%	:Atlantic\_Ocean  & :area          & $10^7\pm10^3$ $km^2$ \\
+%	:Atlantic\_Ocean  & :image         & AOcean1.png    \\
+%	:Atlantic\_Ocean  & :image         & AOcean2.png    \\    \hline
+%\end{tabular}\\
+%
+%\begin{lstlisting}[captionpos=b, caption=SPARQL query about ocean temperatures., label=lst:sparql0,
+%basicstyle=\ttfamily,frame=single]
+%SELECT ?ocean ?temp
+%WHERE {
+%  ?ocean :instance_of :ocean .
+%  ?ocean :temperature ?temp
+%}
+%\end{lstlisting}
+%
+%\begin{lstlisting}[captionpos=b, caption=SPARQL query about ocean areas., label=lst:sparql1,
+%basicstyle=\ttfamily,frame=single]
+%SELECT ?ocean ?area
+%WHERE {
+%  ?ocean :instance_of :ocean .
+%  ?ocean :area ?area
+%}
+%\end{lstlisting}
+%
+%\begin{lstlisting}[captionpos=b, caption=SPARQL query about ocean images., label=lst:sparql2,
+%basicstyle=\ttfamily,frame=single]
+%SELECT ?ocean ?image
+%WHERE {
+%?ocean :instance_of :ocean .
+%?ocean :image ?image
+%}
+%\end{lstlisting}
+%
+%$\delta(q_1(d_1), q_1(d_3)) = 1$ and $\delta(q_2(d_2), q_2(d_4)) = 0$
+%
+%Based on the $\delta$ function (see Equation~\ref{eq:delta}), the problem of Time-to-Live (TTL) estimation, denoted by $TTL(q,m)$ is defined by the size of the largest interval from $m$ for which the query result does not change (see Equation~\ref{eq:ttl}).
+%
+%\begin{equation}
+%\label{eq:ttl}
+%TTL(q,m)=min\{t \in \mathbf{Z}^+ \mid \delta(q(d_m), q(d_{m+t})) \neq 0 \}
+%\end{equation}
+%
+%As a relaxed version of this problem, there is the problem of One-Step-Change (OSC) estimation to predict the change in the next interval. (see Equation~\ref{eq:osc})
+%
+%\begin{equation}
+%\label{eq:osc}
+%OSC(q,m) = \delta(q(d_m), q(d_{m+1}))
+%\end{equation}
+%
+%Considering the dataset from Example~\ref{ex:dataset} and queries~\ref{lst:sparql0}, \ref{lst:sparql1} and \ref{lst:sparql2}, we show the change history of the query $q_1$ (see Figure~\ref{fig:problem}). We mark with a discontinuous line the OSC and with a continuous line the TTL at version $ d_3 $. The OSC is equal to zero, which means that the results will not change in the next version $d_4$, and the TTL equals three.
+%
+%\begin{figure}[h]
+%	\centering
+%	\includegraphics[width=0.7\linewidth]{img/problem.pdf}
+%	\caption{Example change history of query $q_1$.}
+%	\label{fig:problem}
+%\end{figure}
 
-Let delta ($\delta$) be a function to compute the binary dissimilarity between two results for a query $q$ with the following expression:
+\paragraph{Architecture:} We propose a method to predict answers for the OSC and TTL problems. Our method primarily considers static features of the query: these include statistics such as the number of triple patterns, as well as the presence of query operators, such as \texttt{UNION}, \texttt{OPTIONAL}, specific path expressions, etc.; our model can also consider statistics about predicates in the dynamic RDF graph, as well as in which past versions of the dynamic graph the results for the query changed. Figure~\ref{fig:schema} shows the components of our approach, which receives as input a SPARQL query (the architecture itself already encodes information about the dynamic graph and the value of $k$ for OSC, which we set in experiments to 1, predicting changes in the next version). The Feature Extractor decomposes the query into a set of numeric features. The Dynamics Model accepts some features of the query, as well as information from the dynamic graph, in order to compose further features. The final features are passed to a classifier in the case of the OSC problem, and to a regression model in the case of the TTL problem, to generate the final output prediction. We now describe the Feature Extractor and Dynamics Model in more detail.
 
-\begin{equation}
-\label{eq:delta}
-\delta(q(d_i), q(d_j)) = \begin{cases}
-0 & q(d_i) = q(d_j) \\
-1 & q(d_i) \neq q(d_j) 
-\end{cases}
-\end{equation}
-
-\begin{example}
-	\label{ex:dataset}    
-	Consider the following example of seven versions of a RDF dataset. Also, consider the queries~\ref{lst:sparql0}, \ref{lst:sparql1} and \ref{lst:sparql2}.
-\end{example}
-
-\setlength{\tabcolsep}{6pt}
-\begin{tabular}{l l l}    \hline	
-	\multicolumn{3}{c}{versions $d_1$ and $d_2$} \\    \hline
-	:Atlantic\_Ocean  & :instance\_of  & ocean          \\
-	:Atlantic\_Ocean  & :temperature   & 40$\degree$F          \\
-	:Atlantic\_Ocean  & :area          & $10^7\pm10^3$ $km^2$ \\
-	:Atlantic\_Ocean  & :image         & AOcean1.png    \\    \hline
-	\multicolumn{3}{c}{versions $d_3$, $d_4$ and $d_5$} \\    \hline
-	:Atlantic\_Ocean  & :instance\_of  & ocean          \\
-	:Atlantic\_Ocean  & :temperature   & 50$\degree$F             \\
-	:Atlantic\_Ocean  & :area          & $10^7\pm10^3$ $km^2$ \\
-	:Atlantic\_Ocean  & :image         & AOcean1.png    \\    \hline
-	\multicolumn{3}{c}{versions $d_6$ and $d_7$} \\    \hline
-	:Atlantic\_Ocean  & :instance\_of  & ocean          \\
-	:Atlantic\_Ocean  & :temperature   & 60$\degree$F    \\
-	:Atlantic\_Ocean  & :area          & $10^7\pm10^3$ $km^2$ \\
-	:Atlantic\_Ocean  & :image         & AOcean1.png    \\
-	:Atlantic\_Ocean  & :image         & AOcean2.png    \\    \hline
-\end{tabular}\\
-
-\begin{lstlisting}[captionpos=b, caption=SPARQL query about ocean temperatures., label=lst:sparql0,
-basicstyle=\ttfamily,frame=single]
-SELECT ?ocean ?temp
-WHERE {
-  ?ocean :instance_of :ocean .
-  ?ocean :temperature ?temp
-}
-\end{lstlisting}
-
-\begin{lstlisting}[captionpos=b, caption=SPARQL query about ocean areas., label=lst:sparql1,
-basicstyle=\ttfamily,frame=single]
-SELECT ?ocean ?area
-WHERE {
-  ?ocean :instance_of :ocean .
-  ?ocean :area ?area
-}
-\end{lstlisting}
-
-\begin{lstlisting}[captionpos=b, caption=SPARQL query about ocean images., label=lst:sparql2,
-basicstyle=\ttfamily,frame=single]
-SELECT ?ocean ?image
-WHERE {
-?ocean :instance_of :ocean .
-?ocean :image ?image
-}
-\end{lstlisting}
-
-$\delta(q_1(d_1), q_1(d_3)) = 1$ and $\delta(q_2(d_2), q_2(d_4)) = 0$
-
-Based on the $\delta$ function (see Equation~\ref{eq:delta}), the problem of Time-to-Live (TTL) estimation, denoted by $TTL(q,m)$ is defined by the size of the largest interval from $m$ for which the query result does not change (see Equation~\ref{eq:ttl}).
-
-\begin{equation}
-\label{eq:ttl}
-TTL(q,m)=min\{t \in \mathbf{Z}^+ \mid \delta(q(d_m), q(d_{m+t})) \neq 0 \}
-\end{equation}
-
-As a relaxed version of this problem, there is the problem of One-Step-Change (OSC) estimation to predict the change in the next interval. (see Equation~\ref{eq:osc})
-
-\begin{equation}
-\label{eq:osc}
-OSC(q,m) = \delta(q(d_m), q(d_{m+1}))
-\end{equation}
-
-Considering the dataset from Example~\ref{ex:dataset} and queries~\ref{lst:sparql0}, \ref{lst:sparql1} and \ref{lst:sparql2}, we show the change history of the query $q_1$ (see Figure~\ref{fig:problem}). We mark with a discontinuous line the OSC and with a continuous line the TTL at version $ d_3 $. The OSC is equal to zero, which means that the results will not change in the next version $d_4$, and the TTL equals three.
-
-\begin{figure}[h]
+\begin{figure*}[!t]
 	\centering
-	\includegraphics[width=0.7\linewidth]{img/problem.pdf}
-	\caption{Example change history of query $q_1$.}
-	\label{fig:problem}
-\end{figure}
-
-We propose a scheme that automatically identifies whether a SPARQL query will change in the next version (OSC) or when it will change (TTL), depending on the syntax of the query and statistics about the dynamics of predicates. Figure~\ref{fig:schema} shows the components of our approach, which receives as input a SPARQL query. The Feature Extractor analyzes the query and extracts information about the syntax of the query. The Dynamics Model considers some of these features to provide a dynamics indicator of the query. This indicator, together with the previous features extracted, is passed through a classifier that finally predicts the value for the problems posed in Equation~\ref{eq:osc} and Equation~\ref{eq:ttl}.
-
-\begin{figure*}[!ht]
-	\centering
-	\includegraphics[width=0.7\linewidth]{img/schema.pdf}
-	\caption{ Proposed architecture. It receives a SPARQL query as input; uses a pre-calculated Dynamics Model to estimate a query dynamic feature, which is used with other features to predict the OSC and TTL values. }
+	\includegraphics[width=0.9\linewidth]{img/schema.pdf}
+	\caption{Proposed architecture with Feature Extractor and Dynamics Model \ah{What is $g$ here and why is it output from the Dynamics Model (rather than input)?}}
 	\label{fig:schema}
 \end{figure*}
 
-\subsection{Feature Extractor}
-
-Our features are based on the syntactic analysis of the queries; then some features are delivered to the Dynamics Model, which provides an indicator based on the probability of change for the constant predicates within the triple patterns of the query.
+\paragraph{Feature Extractor:} Our features are based on the syntactic analysis of the queries; then some features are delivered to the Dynamics Model, which provides an indicator based on the probability of change for the constant predicates within the triple patterns of the query.
 
 We try to discover the degree of correlation between the propensity to change, with respect to numerical values, such as the number of variables, the number of triple patterns or number of predicate. We also believe that some qualitative variables may be related to the change, such as the existence of some solution-modifiers. We also consider features that describe the complexity of the queries, such as the presence of subqueries, the existence of recursive expressions in the Property Paths of the triple patterns or the existence of any type of negation.
 
