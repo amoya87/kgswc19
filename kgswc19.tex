@@ -13,6 +13,14 @@
 \usepackage{amsmath}
 \usepgfplotslibrary{clickable}
 
+\usepackage{textcomp}
+\usepackage{amssymb}
+\usepackage{xspace}
+
+\newcommand{\tickYes}{\checkmark}
+\newcommand{\tickNo}{\textsl{\textsf{X}}}
+\newcommand{\ntextnumero}{{\fontfamily{txr}\selectfont \textnumero}\xspace}
+
 \newcommand{\Iris}{\ensuremath{\mathbf{I}}}
 \newcommand{\Lits}{\ensuremath{\mathbf{L}}}
 \newcommand{\Bnodes}{\ensuremath{\mathbf{B}}}
@@ -36,6 +44,86 @@
     pdfkeywords={SPARQL;} {Linked Data;} {Dynamics;} {Wikidata;}, % list of keywords
 }
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SPARQL Listing style
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{listings}
+
+\colorlet{punct}{red!60!black}
+\definecolor{background}{HTML}{EEEEEE}
+\definecolor{delim}{RGB}{120,20,40}
+\definecolor{keyw}{RGB}{0,0,192}
+\colorlet{numb}{magenta!60!black}
+
+\lstdefinelanguage{sparql}{
+	sensitive=false,
+	extendedchars=true,
+	literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'{\i}}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+	{Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+	{ü}{{\"u}}1 {Ü}{{\"U}}1 {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {¿}{{?``}}1 {¡}{{!``}}1
+	{<}{{{\color{delim}<}}}{1}
+	{>}{{{\color{delim}>}}}{1}
+	{?}{{{\color{delim}?}}}{1}
+	{*}{{{\color{delim}*}}}{1}
+	{+}{{{\color{delim}+}}}{1}
+	{/}{{{\color{delim}/}}}{1}
+	{,}{{{\color{punct}{,}}}}{1}
+	{;}{{{\color{punct}{;}}}}{1}
+	{.}{{{\color{punct}{.}}}}{1}
+	{:}{{{\color{punct}{:}}}}{1}
+	{\{}{{{\color{delim}{\{}}}}{1} {\}}{{{\color{delim}{\}}}}}{1},
+	morekeywords={ask,select,from,where,order,by,distinct,limit,offset,optional,union,filter,prefix,bound,desc,regex,str,group,not,exists,minus,service,certain,maybe}
+}
+
+\lstdefinestyle{sparqld}{
+	basicstyle=\scriptsize\ttfamily,
+	identifierstyle=\color{black},
+	keywordstyle=\color{keyw}\bfseries,
+	ndkeywordstyle=\color{greenCode}\bfseries,
+	stringstyle=\color{ocherCode}\ttfamily,
+	commentstyle=\color{darkgray}\ttfamily,
+	language={sparql},
+	tabsize=2,
+	showtabs=false,
+	showspaces=false,
+	showstringspaces=false,
+	extendedchars=true,
+	escapechar=`,
+	frame={single},
+	breaklines=true,
+	basewidth=0.5em,
+	moredelim=[is][\color{magenta}]{~}{~},
+	moredelim=**[is][\color{gray}]{£}{£},
+	moredelim=**[is][\color{blue!50!black}]{$}{$},
+	moredelim=**[is][\color{green!50!black}]{¬}{¬},
+	xleftmargin=2ex,
+	xrightmargin=1ex,
+	aboveskip=1.5ex,
+	belowskip=1.5ex
+}
+
+\makeatletter
+\newcommand{\sqbox}{%
+	\collectbox{%
+		\@tempdima=\dimexpr\width-\totalheight\relax
+		\ifdim\@tempdima<\z@
+		\fbox{\hbox{\hspace{-.5\@tempdima}\BOXCONTENT\hspace{-.5\@tempdima}}}%
+		\else
+		\ht\collectedbox=\dimexpr\ht\collectedbox+.5\@tempdima\relax
+		\dp\collectedbox=\dimexpr\dp\collectedbox+.5\@tempdima\relax
+		\fbox{\BOXCONTENT}%
+		\fi
+	}%
+}
+\makeatother
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% /SPARQL Listing style
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\usepackage{floatrow}
+% Table float box with bottom caption, box width adjusted to content
+%\newfloatcommand{capbtabbox}{table}[][\FBwidth]
 
 
 \usepackage{listings}
@@ -259,14 +347,14 @@ We consider a dynamic RDF graph to be a sequence of $n$ versions of an RDF graph
 	\label{fig:schema}
 \end{figure*}
 
-\paragraph{Feature Extractor:} Our features are based on the syntactic analysis of the queries; then some features are delivered to the Dynamics Model, which provides an indicator based on the probability of change for the constant predicates within the triple patterns of the query.
+\paragraph{Feature Extractor:} Our initial set of features are based on analysis of the input SPARQL query. Figure~\ref{fig:query} shows the complete list of evaluated features and shows the nominals. In the case of negation, we consider the statements MINUS, FILTER NOT EXISTS, and FILTER NOT BOUND and by the recursive path we understand those Property Paths that have patterns of the form $e*$ or $e+$ (see Definition~\ref{eq:pp}).
 
 We try to discover the degree of correlation between the propensity to change, with respect to numerical values, such as the number of variables, the number of triple patterns or number of predicate. We also believe that some qualitative variables may be related to the change, such as the existence of some solution-modifiers. We also consider features that describe the complexity of the queries, such as the presence of subqueries, the existence of recursive expressions in the Property Paths of the triple patterns or the existence of any type of negation.
 
-Figure~\ref{fig:query} shows the complete list of evaluated features and shows the nominals. In the case of negation, we consider the statements MINUS, FILTER NOT EXISTS, and FILTER NOT BOUND and by the recursive path we understand those Property Paths that have patterns of the form $e*$ or $e+$ (see Definition~\ref{eq:pp}).
-
-\begin{lstlisting}[captionpos=b, caption=Query example, label=fig:query,
-basicstyle=\ttfamily,frame=single]
+\begin{figure}[!t]
+{\centering
+	\begin{minipage}{0.46\textwidth}
+	\begin{lstlisting}[style=sparqld]
 SELECT ?item
 WHERE {
   ?item :instance_of :human .
@@ -275,30 +363,32 @@ WHERE {
   UNION
     { ?item :place_of_birth ?pob .
       ?pob :located_in* :Wales }
-  OPTIONAL { ?sitelink schema:about ?item .
-             ?sitelink schema:inLanguage "cy" }
+  OPTIONAL 
+    { ?sitelink schema:about ?item .
+      ?sitelink schema:inLanguage "cy" }
   FILTER (!BOUND(?sitelink))
 }
 LIMIT 100
-\end{lstlisting}
-
-\begin{center}
-	\begin{tabular}{|l|ll|}    \hline
-		1  & \# triples        & 7                             \\
-		2  & \# vars           & 3                             \\
-		3  & \# projected vars & 1                             \\
-		4  & \# predicates     & 6                             \\
-		5  & FILTER            & TRUE                          \\
-		6  & LIMIT             & TRUE                          \\
-		7  & UNION             & TRUE                          \\
-		8  & SUBQUERY          & FALSE                         \\
-		9  & *PATH             & TRUE                          \\
-		10 & NEGATION          & TRUE                          \\
-		11 & predicates        & {[}$p_1$,...,$p_k${]}    \\    \hline
-	\end{tabular}
-\end{center}
-
-
+	\end{lstlisting}
+	\end{minipage}}
+	\hfill
+	\resizebox{0.46\textwidth}{!}{
+	\begin{tabular}{rlr}    \toprule
+		1  & \ntextnumero of triples        & 7			\\
+		2  & \ntextnumero of variables      & 3			\\
+		3  & \ntextnumero of projected vars & 1			\\
+		4  & \ntextnumero of predicates     & 6			\\ \midrule
+		5  & \texttt{FILTER}            	& \tickYes	\\
+		6  & \texttt{LIMIT}             	& \tickYes	\\
+		7  & \texttt{UNION}             	& \tickYes	\\
+		8  & \textit{Sub-query}         	& \tickNo	\\
+		9  & \textit{Recursive path}		& \tickYes	\\
+		10 & \textit{Negation}         		& \tickYes	\\ \midrule
+		11 & \textit{Predicates}			& $\{$ \texttt{:instance\_of}, ... $\}$     \\    \bottomrule
+	\end{tabular}	
+	}
+\caption{Example query and the features extracted from it \label{fig:query}}	
+\end{figure}
 
 \subsection{RDF Dynamics Model}
 
