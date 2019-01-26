@@ -207,6 +207,7 @@ SPARQL is the recommended query language to retrieve and manipulate data stored 
 
 Our method supports SPARQL 1.1 \texttt{SELECT} queries, which allow a variety of additional features. One key feature in this extension is that of \textit{property paths}, which allows for matching arbitrary length paths in an RDF graph, potentially returning or matching the endpoints of the path. An IRI $p$ is a \emph{path expression}; if $e$, $e_1$ and $e_2$ are path expressions, then $\texttt{\^{}}e$ (inverse of $e$), $e_1 \texttt{/} e_2$ ($e_1$ followed by $e_2$), $e_1 \texttt{|} e_2$ ($e_1$ or $e_2$), $e\texttt{*}$ (zero or more $e$), $e\texttt{+}$ (one or more $e$), $e\texttt{?}$ (zero or one $e$), and $\texttt{(}$e$\texttt{)}$ (parentheses used for precedence) are also \textit{path expressions}; finally, if $p$, $p_1$, $\ldots$ $p_n$ are IRIs, then $\texttt{!}p$, $\texttt{!}\texttt{(}p_1 \texttt{|} \ldots \texttt{|} p_n\texttt{)}$ and $\texttt{!}\texttt{(}p_1 \texttt{|} \ldots \texttt{|} p_k \texttt{|}  \texttt{{\^{}}}p_{k+1} \texttt{|} \ldots \texttt{|} \texttt{{\^{}}}p_n\texttt{)}$ for $k+1 \leq n$ (negated property sets) are path expressions. Thereafter, a \textit{path pattern} $(s,e,o)$ where $e$ is a path expression is an expression. Other features supported in SPARQL~1.1 include sub-queries, negation, aggregation, value binding, and so forth; for brevity, we do not introduce definitions for all such features.
 
+One topic we do wish to highlight however -- as it relates to the behavior of a query over a dynamic RDF graph -- is that of the \emph{monotonicity} of SPARQL queries~\cite{ArenasP11,ArenasU17}. We say that a \texttt{SELECT} query $Q$ is monotone if and only if $G_1 \subseteq G_2$ implies that $Q(G_1) \subseteq Q(G_2)$ for RDF graphs $G_1$ and $G_2$; intuitively, as data are extended, the results of a monotone query can only be extended. Monotonic SPARQL features include, for example, joins, unions, paths and filters; on the other hand, non-monotonic SPARQL features include negation and optional~\cite{ArenasP11}.
 
 %\begin{table}
 %\centering
@@ -347,9 +348,15 @@ We consider a dynamic RDF graph to be a sequence of $n$ versions of an RDF graph
 	\label{fig:schema}
 \end{figure*}
 
-\paragraph{Feature Extractor:} Our initial set of features are based on analysis of the input SPARQL query. Figure~\ref{fig:query} shows the complete list of evaluated features and shows the nominals. In the case of negation, we consider the statements MINUS, FILTER NOT EXISTS, and FILTER NOT BOUND and by the recursive path we understand those Property Paths that have patterns of the form $e*$ or $e+$ (see Definition~\ref{eq:pp}).
+\paragraph{Feature Extractor:} Our initial set of features are based on analysis of the input SPARQL query. Figure~\ref{fig:query} shows the list of evaluated features, as well as -- for the purposes of illustration -- their values for an accompanying example query. 
 
-We try to discover the degree of correlation between the propensity to change, with respect to numerical values, such as the number of variables, the number of triple patterns or number of predicate. We also believe that some qualitative variables may be related to the change, such as the existence of some solution-modifiers. We also consider features that describe the complexity of the queries, such as the presence of subqueries, the existence of recursive expressions in the Property Paths of the triple patterns or the existence of any type of negation.
+The first four features capture statistics about the query, indicating loosely its size and complexity. One may consider that the higher these four values are, in general, the more dynamic we can expect the query to be since there are more ``opportunities'' for the query results to be affected by change. In some cases, however, the hypothesized correlation is not direct since for example adding more triple patterns may serve to narrow the query down and focus it on a static part of the graph (e.g., when looking for the movies of directors, adding a triple pattern to restrict the results to directors who have died). Hence it will be of interest to see how these features affect the predictions made experimentally.
+
+The next six features indicate the query operators used; to reduce the dimensionality of the problem, we capture only a subset of popularly-used features and group related features into one dimension: in the case of \textit{Recursive path}, we group queries that contain as expression of the form $e$\texttt{*} or $e$\texttt{+}. On the other hand, in \textit{Negation}, we group non-monotonic features that allow for modeling difference (\texttt{MINUS}, \texttt{NOT EXISTS}, \texttt{OPTIONAL}, \texttt{!BOUND}). These features -- though course-grained -- are straightforward to extract from a query, and offer valuable insights into how the query may behave in a dynamic query; for example, the \textit{Negation} feature captures information about the (non-)monotonicity of the query, while we suppose that \textit{Recursive paths}, which may traverse an arbitrary number of triples in the graph, might be sensitive to change. Again, such relations are not direct where experiments are required for further insights.
+
+\ah{Is OPTIONAL not captured? Why were these features captured? Why not BIND or OFFSET or GROUP BY?}
+
+The final feature -- a raw set of all predicates used -- is rather a meta-feature that serves as input for the next part of the proposed model.
 
 \begin{figure}[!t]
 {\centering
@@ -372,11 +379,11 @@ LIMIT 100
 	\end{lstlisting}
 	\end{minipage}}
 	\hfill
-	\resizebox{0.46\textwidth}{!}{
+	\resizebox{0.48\textwidth}{!}{
 	\begin{tabular}{rlr}    \toprule
-		1  & \ntextnumero of triples        & 7			\\
+		1  & \ntextnumero of triple patterns        & 7			\\
 		2  & \ntextnumero of variables      & 3			\\
-		3  & \ntextnumero of projected vars & 1			\\
+		3  & \ntextnumero of projected variables & 1			\\
 		4  & \ntextnumero of predicates     & 6			\\ \midrule
 		5  & \texttt{FILTER}            	& \tickYes	\\
 		6  & \texttt{LIMIT}             	& \tickYes	\\
@@ -390,112 +397,176 @@ LIMIT 100
 \caption{Example query and the features extracted from it \label{fig:query}}	
 \end{figure}
 
-\subsection{RDF Dynamics Model}
+\paragraph{Dynamics Model:} The next component in our architecture is the Dynamics Model which (optionally) incorporates information about the query \textit{and} the dynamic graph under consideration. 
 
-We propose a model to estimate the dynamics of the results of a SPARQL query on an RDF dataset. The intuition behind our model is to capture how many triples change for a predicate in a time interval. For this, in the following, we define \textit{Predicate Multiplicity of an RDF dataset}.
+The first feature of the Dynamics Model aims to capture how many triples change for a predicate in a time interval, with the idea that -- as in previous works~\cite{UmbrichKHP12,UmbrichKPPH12,ekawUmbrichKHP12,DehghanzadehPKUHD14} -- predicates capture rich information about the dynamics of a dataset, where the results of queries with dynamic predicates will be more sensitive to change; furthermore, given that in most datasets the number of predicates is relatively low (in the thousands or tens of thousand), such statistics are quite lightweight to maintain and compute.
 
-\begin{definition}[Predicate Multiplicity of an RDF Dataset]
-	Given an RDF dataset $d$ and a predicate $p$, the multiplicity of $p$ in $d$, denoted by $M(p,d)$, is:
-	\begin{equation}
-	\label{eq:pm}
-	M(p,d) = |\{(x,y,z) \in d : y = p \}|
-	\end{equation}
-\end{definition}
+Formally, given two RDF graphs $G_i$ and $G_j$, we denote by $G_i \oplus G_j$ the set of triples $(G_i \cup G_j) - (G_i \cap G_j)$ where ``$-$'' denotes set difference; in other words, $G_i \oplus G_j$ denotes the triples in one graph or the other but not both (noting that $G_i \oplus G_j = G_j \oplus G_i$). Next, given an RDF graph $G$ and an IRI $p$, let $\#(G,p) \da |\{(x,y,z) \in G : y = p \}|$ denote the number of triples in $G$ with predicate $p$. Next, given a dynamic RDF graph $\mathcal{G} \da ( G_1, \ldots, G_n )$ and a predicate $p$, we denote by $\Delta(\mathcal{G},p) \da \Sigma_{i=1}^{n-1} \#(G_i \oplus G_{i+1},p)$ the sum of the number of triples with the predicate $p$ that changed between pairs of consecutive versions.
 
+\ah{We don't need to define the interval in the latter function since we could project an interval from $\mathcal{G}$ when needed (more general and readable I think; e.g., $\Delta(\mathcal{G}[i,j],p)$). Also I don't get why you divide by Aggregated Predicate Multiplicity; doesn't this just scale all predicates by the same constant for an interval? I think it would perhaps make more sense to normalize by $\#(G_i \cup G_{i+1},p)$, or even just go down the route of Jaccard Similarity: $\Delta(\mathcal{G},p) \da \Sigma_{i=1}^{n-1}\frac{\#(G_i \cap G_{i+1},p)}{\#(G_i \cup G_{i+1},p)}$}
+
+
+%\begin{definition}[Predicate Multiplicity of an RDF Dataset]
+%	Given an RDF dataset $d$ and a predicate $p$, the multiplicity of $p$ in $d$, denoted by $M(p,d)$, is:
+%	\begin{equation}
+%	\label{eq:pm}
+%	M(p,d) = |\{(x,y,z) \in d : y = p \}|
+%	\end{equation}
+%\end{definition}
+%
+%
+%\begin{example}
+%	\label{ex:pm}    
+%	Considering Example~\ref{ex:dataset}, the Predicate Multiplicity of predicate \textit{image} in $d_6$ dataset is:    $M(image,d_6) = 2$
+%\end{example}
+%
+%Then, we must capture the change between two versions of an RDF dataset at the triples level, which represents triples added and deleted between the versions. For this purpose, we define a \textit{Difference Set} as an RDF dataset denoted by $\Delta(d_1, d_2)$ applying low-level change detection techniques.
+%
+%\begin{definition}[Difference Set]
+%	Let $d_1$ and $d_2$ be two RDF datasets; a Difference Set denoted by $\Delta(d_1, d_2)$ is:
+%	\begin{equation}
+%	\label{eq:ds}
+%	\Delta(d_1, d_2) = \{t \mid t \in d_2 \wedge t \notin d_1\} \cup \{t \mid t \in d_1 \wedge t \notin d_2\}
+%	\end{equation}
+%\end{definition}
+%
+%\begin{example}
+%	\label{ex:ds}
+%	We show the Difference Set between versions $d_1$ and $d_6$:\\
+%	\begin{center}    
+%		\begin{tabular}{lll}    \hline
+%			\multicolumn{3}{c}{$\Delta(d_1, d_6)$} \\    \hline
+%			-    :Atlantic\_Ocean  & :temperature   & 40$\degree$F          \\
+%			+    :Atlantic\_Ocean  & :temperature   & 60$\degree$F          \\
+%			+    :Atlantic\_Ocean  & :image         & AOcean2.png              \\    \hline
+%		\end{tabular}
+%	\end{center}
+%	
+%	We can now denote the Predicate Multiplicity of a Difference Set of $d_1$ and $d_2$ by $M(p, \Delta(d_1, d_2))$, e.g., $M(image, \Delta(d_1, d_6)) = 1$.
+%\end{example}
+%
+%
+%Following the intuition of our model, we now look for the multiplicity of a predicate $p$ of a dynamic dataset $\mathcal{D}$ in a time interval $[n,m]$.
+%
+%\begin{definition}[Aggregated Predicate Multiplicity of a dynamic dataset]
+%	Let $\mathcal{D} = (d_1, d_2, ..., d_m)$ be a dynamic dataset, and $p$ a predicate. The Aggregated Predicate Multiplicity of $\mathcal{D}$ in a time interval $[n,m]$, denoted by $AM(p, \mathcal{D},[n,m])$ is:
+%	\begin{equation}
+%	\label{eq:apm}
+%	AM(p, \mathcal{D},[n,m]) = \sum_{i=n}^{m-1}M(p, \Delta(d_i, d_{i+1}))
+%	\end{equation}
+%\end{definition}
+%
+%\begin{example}
+%	\label{ex:apm}
+%	$AM(temperature, \mathcal{D},[1, 7]) =$
+%	
+%	$ \sum_{i=1}^{6}M(temperature, \Delta(d_i, d_{i+1})) = 4$
+%	
+%	\begin{center}    
+%		\begin{tabular}{lll}    \hline
+%			\multicolumn{3}{c}{$\sum_{i=1}^{6}\Delta(d_i, d_{i+1})$} \\    \hline
+%			-    :Atlantic\_Ocean  & :temperature   & 40$\degree$F          \\
+%			+    :Atlantic\_Ocean  & :temperature   & 50$\degree$F          \\            
+%			-    :Atlantic\_Ocean  & :temperature   & 50$\degree$F          \\
+%			+    :Atlantic\_Ocean  & :temperature   & 60$\degree$F          \\
+%			+    :Atlantic\_Ocean  & :image         & AOcean2.png              \\    \hline
+%		\end{tabular}
+%	\end{center}
+%\end{example}
+%
+%We can now denote the Aggregated Multiplicity of a dynamic dataset in a time interval $[n,m]$ by:
+%
+%\begin{equation}
+%\label{eq:am}
+%AM(\mathcal{D},[n,m]) = \sum_{p \in P}AM(p, \mathcal{D},[n,m])
+%\end{equation}\\
+%Where $ P $ denotes the set of all predicates that have changed in the interval $[n,m]$.
+%
+%\begin{example}
+%	\label{ex:am}
+%	$AM(\mathcal{D},[1,7]) = AM(temperature, \mathcal{D},[1,7])$
+%	
+%	$+ AM(image, \mathcal{D},[1,7]) = 5$
+%\end{example}
+%
+%Finally, the \textit{Dynamics} of a predicate is given by the \textit{Aggregated Predicate Multiplicity of a dynamic dataset} $\mathcal{D}$ divided by \textit{Aggregated Multiplicity of a dynamic dataset}.
+%
+%\begin{equation}
+%\label{eq:dyn}
+%Dyn(p, \mathcal{D},[n,m]) = \frac{AM(p, \mathcal{D},[n,m])}{AM(\mathcal{D},[n,m])}
+%\end{equation}
+%
+%\begin{example}
+%	\label{ex:dyn}
+%	Considering our example:
+%	
+%	$ Dyn(temperature, \mathcal{D},[1,7]) = \frac{4}{5} = 0.8$
+%	
+%	$ Dyn(image, \mathcal{D},[1,7]) = \frac{1}{5} = 0.2$
+%	
+%	$ Dyn(area, \mathcal{D},[1,7]) = \frac{0}{5} = 0$
+%\end{example}
+%
+%Considering our proposed model, the Dynamics Model component receives the set of predicates extracted from the queries, calculates the $Dyn(p, \mathcal{D},[n,m])$ for each predicate $p$ and provides the value of a Transformation Function on these indicators. The intention of the Transformation Function is to estimate the dynamics of the query based on the Dynamics of the predicates.
+
+\begin{figure}[!t]
+{\centering
+	\begin{minipage}{0.32\textwidth}
+	\begin{lstlisting}[style=sparqld]
+:LMessi :name "L. Messi" ;
+ :instance_of :Human ;
+ :children 1 ;
+ :played :2014WC .
+	\end{lstlisting}
+	\end{minipage}	
+\hfill
+\begin{minipage}{0.32\textwidth}
+	\begin{lstlisting}[style=sparqld]
+:LMessi :name "L. Messi" ;
+ :children 2 ;
+ :played :2014WC, :2018WC .
+	\end{lstlisting}
+\end{minipage}	
+\hfill
+\begin{minipage}{0.32\textwidth}
+	\begin{lstlisting}[style=sparqld]
+:LMessi :name "L. Messi" ;
+ :instance_of :Human ;
+ :children 3 ;
+ :played :2014WC, :2018WC .
+	\end{lstlisting}
+\end{minipage}	
+}
+
+\caption{Example dynamic RDF graph $\mathcal{G} = (G_1, G_2, G_3)$ (from left to right, resp.) \label{fig:dg}}
+\end{figure}
+
+\begin{figure}[!t]
+{\centering
+\hfill
+	\begin{minipage}{0.35\textwidth}
+	\begin{lstlisting}[style=sparqld]
+:LMessi :instance_of :Human ;
+ :children 1 , 2 ;
+ :played :2014WC .
+	\end{lstlisting}
+	\end{minipage}	
+\hfill
+\begin{minipage}{0.35\textwidth}
+	\begin{lstlisting}[style=sparqld]
+:LMessi :instance_of :Human ;
+ :children 2 , 3 .
+	\end{lstlisting}
+\end{minipage}	
+\hfill
+}
+
+\caption{Changes for $\mathcal{G}$ in Figure~\ref{fig:dgc}, showing $G_1 \oplus G_2$ (left) and $G_2 \oplus G_3$ (right) \label{fig:dgc}}
+\end{figure}
 
 \begin{example}
-	\label{ex:pm}    
-	Considering Example~\ref{ex:dataset}, the Predicate Multiplicity of predicate \textit{image} in $d_6$ dataset is:    $M(image,d_6) = 2$
+Consider the example dynamic RDF graph $\mathcal{G}$ in Figure~\ref{fig:dg} (based on real data from Wikidata, with IRIs modified for the purposes of readability). In Figure~\ref{fig:dgc} we show the pairwise changes between each version: $G_1 \oplus G_2$ and $G_3 \oplus G_4$. For a predicate $p$, the value $\Delta(\mathcal{G},p)$ is then the sum of triples with predicate $p$ in the graphs $G_1 \oplus G_2$ and $G_2 \oplus G_3$. Looking at Figure~\ref{fig:dgc}, for example, \texttt{:name} does not appear ($\Delta(\mathcal{G},\texttt{:name})=0$), \texttt{:children} appears twice in $G_1 \oplus G_2$ and twice in $G_2 \oplus G_3$ ($\Delta(\mathcal{G},\texttt{:children})=4$), and so forth.
 \end{example}
-
-Then, we must capture the change between two versions of an RDF dataset at the triples level, which represents triples added and deleted between the versions. For this purpose, we define a \textit{Difference Set} as an RDF dataset denoted by $\Delta(d_1, d_2)$ applying low-level change detection techniques.
-
-\begin{definition}[Difference Set]
-	Let $d_1$ and $d_2$ be two RDF datasets; a Difference Set denoted by $\Delta(d_1, d_2)$ is:
-	\begin{equation}
-	\label{eq:ds}
-	\Delta(d_1, d_2) = \{t \mid t \in d_2 \wedge t \notin d_1\} \cup \{t \mid t \in d_1 \wedge t \notin d_2\}
-	\end{equation}
-\end{definition}
-
-\begin{example}
-	\label{ex:ds}
-	We show the Difference Set between versions $d_1$ and $d_6$:\\
-	\begin{center}    
-		\begin{tabular}{lll}    \hline
-			\multicolumn{3}{c}{$\Delta(d_1, d_6)$} \\    \hline
-			-    :Atlantic\_Ocean  & :temperature   & 40$\degree$F          \\
-			+    :Atlantic\_Ocean  & :temperature   & 60$\degree$F          \\
-			+    :Atlantic\_Ocean  & :image         & AOcean2.png              \\    \hline
-		\end{tabular}
-	\end{center}
-	
-	We can now denote the Predicate Multiplicity of a Difference Set of $d_1$ and $d_2$ by $M(p, \Delta(d_1, d_2))$, e.g., $M(image, \Delta(d_1, d_6)) = 1$.
-\end{example}
-
-
-Following the intuition of our model, we now look for the multiplicity of a predicate $p$ of a dynamic dataset $\mathcal{D}$ in a time interval $[n,m]$.
-
-\begin{definition}[Aggregated Predicate Multiplicity of a dynamic dataset]
-	Let $\mathcal{D} = (d_1, d_2, ..., d_m)$ be a dynamic dataset, and $p$ a predicate. The Aggregated Predicate Multiplicity of $\mathcal{D}$ in a time interval $[n,m]$, denoted by $AM(p, \mathcal{D},[n,m])$ is:
-	\begin{equation}
-	\label{eq:apm}
-	AM(p, \mathcal{D},[n,m]) = \sum_{i=n}^{m-1}M(p, \Delta(d_i, d_{i+1}))
-	\end{equation}
-\end{definition}
-
-\begin{example}
-	\label{ex:apm}
-	$AM(temperature, \mathcal{D},[1, 7]) =$
-	
-	$ \sum_{i=1}^{6}M(temperature, \Delta(d_i, d_{i+1})) = 4$
-	
-	\begin{center}    
-		\begin{tabular}{lll}    \hline
-			\multicolumn{3}{c}{$\sum_{i=1}^{6}\Delta(d_i, d_{i+1})$} \\    \hline
-			-    :Atlantic\_Ocean  & :temperature   & 40$\degree$F          \\
-			+    :Atlantic\_Ocean  & :temperature   & 50$\degree$F          \\            
-			-    :Atlantic\_Ocean  & :temperature   & 50$\degree$F          \\
-			+    :Atlantic\_Ocean  & :temperature   & 60$\degree$F          \\
-			+    :Atlantic\_Ocean  & :image         & AOcean2.png              \\    \hline
-		\end{tabular}
-	\end{center}
-\end{example}
-
-We can now denote the Aggregated Multiplicity of a dynamic dataset in a time interval $[n,m]$ by:
-
-\begin{equation}
-\label{eq:am}
-AM(\mathcal{D},[n,m]) = \sum_{p \in P}AM(p, \mathcal{D},[n,m])
-\end{equation}\\
-Where $ P $ denotes the set of all predicates that have changed in the interval $[n,m]$.
-
-\begin{example}
-	\label{ex:am}
-	$AM(\mathcal{D},[1,7]) = AM(temperature, \mathcal{D},[1,7])$
-	
-	$+ AM(image, \mathcal{D},[1,7]) = 5$
-\end{example}
-
-Finally, the \textit{Dynamics} of a predicate is given by the \textit{Aggregated Predicate Multiplicity of a dynamic dataset} $\mathcal{D}$ divided by \textit{Aggregated Multiplicity of a dynamic dataset}.
-
-\begin{equation}
-\label{eq:dyn}
-Dyn(p, \mathcal{D},[n,m]) = \frac{AM(p, \mathcal{D},[n,m])}{AM(\mathcal{D},[n,m])}
-\end{equation}
-
-\begin{example}
-	\label{ex:dyn}
-	Considering our example:
-	
-	$ Dyn(temperature, \mathcal{D},[1,7]) = \frac{4}{5} = 0.8$
-	
-	$ Dyn(image, \mathcal{D},[1,7]) = \frac{1}{5} = 0.2$
-	
-	$ Dyn(area, \mathcal{D},[1,7]) = \frac{0}{5} = 0$
-\end{example}
-
-Considering our proposed model, the Dynamics Model component receives the set of predicates extracted from the queries, calculates the $Dyn(p, \mathcal{D},[n,m])$ for each predicate $p$ and provides the value of a Transformation Function on these indicators. The intention of the Transformation Function is to estimate the dynamics of the query based on the Dynamics of the predicates.
 
 
 \section{Datasets}
