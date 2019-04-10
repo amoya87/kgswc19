@@ -809,9 +809,11 @@ Although we have seen that the number of unique predicates did not change much o
 
 %\subsection{Queries Dataset}
 
-\paragraph{Queries:} In order to achieve a set of SPARQL queries that are answerable over Wikidata and with which we could run experiments, we took the user-contributed example queries from the Wikidata Query Service\footnote{https://www.wikidata.org/wiki/Wikidata:SPARQL\_query\_service/queries/examples}, consisting of 388 SPARQL 1.1 \texttt{SELECT} queries of varying degrees of complexity, touching upon various domains of data, and with a mix of varying query operators.\footnote{Very recently, a large log of millions of SPARQL queries have been released for Wikidata~\cite{MalyshevKGGB18}; these queries were not available when conducting our experiments, but would be interesting to analyze as part of future work.}
+\paragraph{Queries:} In order to achieve a set of SPARQL queries that are answerable over Wikidata and with which we could run experiments, we took the user-contributed example queries from the Wikidata Query Service\footnote{https://www.wikidata.org/wiki/Wikidata:SPARQL\_query\_service/queries/examples}, consisting of 389 SPARQL 1.1 \texttt{SELECT} queries of varying degrees of complexity, touching upon various domains of data, and with a mix of varying query operators.\footnote{Very recently, a large log of millions of SPARQL queries have been released for Wikidata~\cite{MalyshevKGGB18}; these queries were not available when conducting our experiments, but would be interesting to analyze as part of future work.}
 
-Certain queries had to be removed from the original set of 388: some had syntax errors; others asked for information external to Wikidata (using \texttt{SERVICE}) or asked for qualifiers that are not present in the truthy version. We also eliminated a handful of queries that returned bindings to blank nodes to facilitate comparison between the results. Furthermore, we needed to transform certain queries for the purposes of our experiments. Some queries used features particular to the Wikidata Query Service, such as using a custom label \texttt{SERVICE} call to specify language preferences; we converted these queries to standard SPARQL using \texttt{COALESCE} to capture preferences. Furthermore, some queries featured non-deterministic elements -- such as \texttt{LIMIT}/\texttt{OFFSET} without ordering, \texttt{SAMPLE} or temporal functions -- such as \texttt{TODAY()} -- that may lead to changes in results not related to changes in the data; we remove queries with \texttt{SAMPLE} and temporal functions, and add an \texttt{ORDER BY} clause to all queries to ensure determinism with \texttt{LIMIT}/\texttt{OFFSET} and more generally to facilitate quick comparison of results. Figure~\ref{fig:transform} shows an example of a Wikidata query with the \texttt{LABEL} service rewritten and a deterministic ordering added. As a result of this process of filtering and transformation, we end up with a total of 221 deterministic queries.
+96 queries had to be removed from the original set of 389 because they asked for information external to Wikidata (using \texttt{SERVICE}) or asked for qualifiers that are not present in the truthy version. We also eliminated 12 queries that returned bindings to blank nodes to facilitate comparison between the results. Furthermore, some queries featured non-deterministic elements -- such as \texttt{LIMIT}/\texttt{OFFSET} without ordering, \texttt{SAMPLE} or temporal functions -- such as \texttt{TODAY()} -- that may lead to changes in results not related to changes in the data; we remove 23 queries with \texttt{SAMPLE} and temporal functions, and add an \texttt{ORDER BY} clause to all queries to ensure determinism with \texttt{LIMIT}/\texttt{OFFSET} and more generally to facilitate quick comparison of results. We also eliminated 37 queries with 0 results in the executions over all the snapshots. As a result of this process of filtering, we end up with a total of 221 deterministic queries.
+
+Furthermore, we needed to transform certain queries for the purposes of our experiments. 163 queries used features particular to the Wikidata Query Service, such as using a custom label \texttt{SERVICE} call to specify language preferences; we converted these queries to standard SPARQL using \texttt{COALESCE} to capture preferences.  Figure~\ref{fig:transform} shows an example of a Wikidata query with the \texttt{LABEL} service rewritten and a deterministic ordering added. 
 
 \begin{figure}[!t]
 \centering
@@ -847,7 +849,7 @@ ORDER BY ?item ?itemLabel
 \caption{Query transformation before (above) and after (below) \label{fig:transform}}
 \end{figure}
 
-In Table~\ref{tab:Pattern}, we provide statistics on the distribution of different types of triple patterns in the 221 queries; of key importance is that 90.35\% of the triple patterns have a constant in the predicate position, meaning that they are compatible with a model based on the dynamics of predicates. We also see that 83 triple patterns (7.93\%) feature a path expression, where Table~\ref{tab:Path} provides the distribution of these expressions (remarking that multiple patterns can be used in one expression); of note here is that recursion is commonly found (74.70\% use $e\texttt{*}$ while 9.64\% use $e\texttt{+}$), and that we find no negated property paths.
+In Table~\ref{tab:Pattern}, we provide statistics on the distribution of different types of triple patterns in the 221 queries before the transformation; of key importance is that 86.20\% of the triple patterns have a constant in the predicate position, meaning that they are compatible with a model based on the dynamics of predicates. We also see that 83 triple patterns (11.34\%) feature a path expression, where Table~\ref{tab:Path} provides the distribution of these expressions (remarking that multiple patterns can be used in one expression); of note here is that recursion is commonly found (74.70\% use $e\texttt{*}$ while 9.64\% use $e\texttt{+}$), and that we find no negated property paths.
 
 \begin{table}[t]
 	\begin{minipage}[b]{0.47\linewidth}
@@ -855,18 +857,18 @@ In Table~\ref{tab:Pattern}, we provide statistics on the distribution of differe
 		\caption{Distribution of triple patterns (C: Constant, V: Variable, P: Path). \label{tab:Pattern}}
 		\begin{tabular}{lrr}    \toprule
 			\textbf{Pattern} & \textbf{\ntextnumero} & \textbf{\%} \\    \midrule
-			V C V   & 751      & 71.73\%    \\
-			V C C   & 189      & 18.05\%    \\
-			V V V   & 9        & 0.86\%     \\
-			C C V   & 6        & 0.57\%     \\
-			V V C   & 5        & 0.48\%     \\
-			C V V   & 3        & 0.29\%     \\
-			C V C   & 1        & 0.10\%      \\
-			C C C   & 0        & 0.00\%        \\    \midrule
-			V P C   & 69       & 6.59\%     \\
-			V P V   & 13       & 1.24\%     \\
-			C P V   & 1        & 0.10\%      \\
-			C P C   & 0        & 0.00\%        \\    \bottomrule
+			V C V   & 435      & 59.43\%    \\
+			V C C   & 190      & 25.96\%    \\
+			V V V   & 9        & 1.23\%     \\
+			C C V   & 6        & 0.82\%     \\
+			V V C   & 5        & 0.68\%     \\
+			C V V   & 3        & 0.41\%     \\
+			C V C   & 1        & 0.14\%     \\
+			C C C   & 0        & 0.00\%     \\    \midrule
+			V P C   & 69       & 9.43\%     \\
+			V P V   & 13       & 1.78\%     \\
+			C P V   & 1        & 0.14\%     \\
+			C P C   & 0        & 0.00\%     \\    \bottomrule
 		\end{tabular}
 	\end{minipage}
 	\hfill
@@ -888,7 +890,7 @@ In Table~\ref{tab:Pattern}, we provide statistics on the distribution of differe
 	\end{minipage}
 \end{table}
 
-Finally, we look at how the results for these queries change over the 23 versions. Figure~\ref{graph:changeV} shows how many queries had some results change between two consecutive versions, where we see that approximately half of the queries see changes in their results each version. But are these always the same queries that change every time? Figure~\ref{graph:changeV} shows the number of versions in which some result changed for each query; the queries are ordered by the number of changes in their results, where we can see that the results of 44 queries (19.90\%) change each time, 18 queries (8\%) never change, and more generally, we note a quite uniform distribution of queries in between. More generally speaking, we conclude that our query set has a good balance of queries whose results never change, queries whose results always change, and queries whose results sometimes change.
+Finally, we look at how the results for these queries change over the 23 versions. Figure~\ref{graph:changeV} shows how many queries had some results change between two consecutive versions, where we see that approximately half of the queries see changes in their results each version. But are these always the same queries that change every time? Figure~\ref{graph:changeV} shows the number of versions in which some result changed for each query; the queries are ordered by the number of changes in their results, where we can see that the results of 44 queries (19.90\%) change each time, 17 queries (7.69\%) never change, and more generally, we note a quite uniform distribution of queries in between. More generally speaking, we conclude that our query set has a good balance of queries whose results never change, queries whose results always change, and queries whose results sometimes change.
 
 \begin{figure}[t]
 	\begin{minipage}[b]{0.47\linewidth}
@@ -947,7 +949,7 @@ Finally, we look at how the results for these queries change over the 23 version
 		color=blue
 		]
 		coordinates {
-			(1,21)(2,21)(3,21)(4,21)(5,21)(6,21)(7,21)(8,21)(9,21)(10,21)(11,21)(12,21)(13,21)(14,21)(15,21)(16,21)(17,21)(18,21)(19,21)(20,21)(21,21)(22,21)(23,21)(24,21)(25,21)(26,21)(27,21)(28,21)(29,21)(30,21)(31,21)(32,21)(33,21)(34,21)(35,21)(36,21)(37,21)(38,21)(39,21)(40,21)(41,21)(42,21)(43,21)(44,21)(45,20)(46,20)(47,20)(48,20)(49,20)(50,20)(51,20)(52,19)(53,19)(54,19)(55,19)(56,19)(57,19)(58,19)(59,19)(60,18)(61,18)(62,18)(63,18)(64,18)(65,18)(66,18)(67,17)(68,17)(69,17)(70,17)(71,17)(72,17)(73,17)(74,16)(75,16)(76,16)(77,16)(78,16)(79,16)(80,15)(81,15)(82,15)(83,15)(84,14)(85,14)(86,14)(87,14)(88,14)(89,14)(90,14)(91,14)(92,14)(93,13)(94,13)(95,13)(96,13)(97,13)(98,13)(99,12)(100,12)(101,12)(102,12)(103,12)(104,12)(105,12)(106,12)(107,12)(108,12)(109,11)(110,11)(111,11)(112,11)(113,10)(114,10)(115,10)(116,10)(117,10)(118,9)(119,9)(120,9)(121,9)(122,9)(123,9)(124,9)(125,9)(126,8)(127,8)(128,8)(129,8)(130,8)(131,8)(132,8)(133,8)(134,8)(135,8)(136,7)(137,7)(138,7)(139,7)(140,7)(141,7)(142,7)(143,6)(144,6)(145,6)(146,6)(147,6)(148,6)(149,6)(150,6)(151,5)(152,5)(153,5)(154,4)(155,4)(156,4)(157,4)(158,4)(159,4)(160,4)(161,4)(162,4)(163,4)(164,4)(165,4)(166,3)(167,3)(168,3)(169,3)(170,3)(171,3)(172,2)(173,2)(174,2)(175,2)(176,2)(177,2)(178,2)(179,2)(180,2)(181,2)(182,2)(183,2)(184,2)(185,2)(186,2)(187,2)(188,1)(189,1)(190,1)(191,1)(192,1)(193,1)(194,1)(195,1)(196,1)(197,1)(198,1)(199,1)(200,1)(201,1)(202,1)(203,1)(204,0)(205,0)(206,0)(207,0)(208,0)(209,0)(210,0)(211,0)(212,0)(213,0)(214,0)(215,0)(216,0)(217,0)(218,0)(219,0)(220,0)(221,0)
+			(1,22)(2,22)(3,22)(4,22)(5,22)(6,22)(7,22)(8,22)(9,22)(10,22)(11,22)(12,22)(13,22)(14,22)(15,22)(16,22)(17,22)(18,22)(19,22)(20,22)(21,22)(22,22)(23,22)(24,22)(25,22)(26,22)(27,22)(28,22)(29,22)(30,22)(31,22)(32,22)(33,22)(34,22)(35,22)(36,22)(37,22)(38,22)(39,22)(40,22)(41,22)(42,22)(43,22)(44,22)(45,21)(46,21)(47,21)(48,21)(49,21)(50,21)(51,21)(52,20)(53,20)(54,20)(55,20)(56,20)(57,20)(58,20)(59,20)(60,19)(61,19)(62,19)(63,19)(64,19)(65,19)(66,18)(67,18)(68,18)(69,18)(70,18)(71,18)(72,18)(73,18)(74,17)(75,17)(76,17)(77,17)(78,16)(79,16)(80,16)(81,16)(82,16)(83,16)(84,15)(85,15)(86,15)(87,15)(88,15)(89,15)(90,15)(91,15)(92,14)(93,14)(94,14)(95,14)(96,13)(97,13)(98,13)(99,13)(100,13)(101,13)(102,13)(103,13)(104,12)(105,12)(106,12)(107,12)(108,12)(109,12)(110,11)(111,11)(112,11)(113,11)(114,11)(115,11)(116,11)(117,11)(118,10)(119,10)(120,10)(121,10)(122,10)(123,10)(124,10)(125,9)(126,9)(127,9)(128,9)(129,9)(130,9)(131,8)(132,8)(133,8)(134,8)(135,8)(136,7)(137,7)(138,7)(139,7)(140,7)(141,7)(142,7)(143,7)(144,6)(145,6)(146,6)(147,6)(148,6)(149,6)(150,6)(151,6)(152,5)(153,5)(154,5)(155,5)(156,5)(157,5)(158,4)(159,4)(160,4)(161,4)(162,4)(163,4)(164,4)(165,4)(166,4)(167,4)(168,4)(169,3)(170,3)(171,3)(172,3)(173,3)(174,3)(175,2)(176,2)(177,2)(178,2)(179,2)(180,2)(181,2)(182,2)(183,2)(184,2)(185,2)(186,2)(187,2)(188,2)(189,2)(190,1)(191,1)(192,1)(193,1)(194,1)(195,1)(196,1)(197,1)(198,1)(199,1)(200,1)(201,1)(202,1)(203,1)(204,1)(205,0)(206,0)(207,0)(208,0)(209,0)(210,0)(211,0)(212,0)(213,0)(214,0)(215,0)(216,0)(217,0)(218,0)(219,0)(220,0)(221,0)
 		};
 		
 		%\legend{# entities}
@@ -976,15 +978,13 @@ Finally, we look at how the results for these queries change over the 23 version
 %	\item Trigger a detection of the change as soon as the order of the statements differs between two snapshots.
 %\end{enumerate}
 
-Our experiments aim to ascertain the (relative) quality of predictions that can be made in the context of One Shot Change (OSC) and Time To Live (TTL) based on query features, statistics of predicate dynamics, as well as information about the historical evolution of queries.  \ah{Update with research questions later}
+Our experiments aim to ascertain the (relative) quality of predictions that can be made in the context of One Shot Change (OSC) and Time To Live (TTL) based on query features, statistics of predicate dynamics, as well as information about the historical evolution of queries.
 
-\paragraph{Setting:} Given that our tasks are prediction based, we must thus build a training set and a test set. With 23 versions, we must hold out at least one version for testing, leaving a maximum interval of 22 past versions to use for predictions. However, the more past versions we consider for a prediction, the fewer examples we can generate; for example, if we consider 22 versions for training, we will only have one ground truth label for each query. In the end, we opted to consider the 3 previous versions ($G_{i-3}, G_{i-2}, G_{i-1}$) to predict changes for the subsequent version ($G_i$); this allows us to predict from $G_4$ to $G_{23}$ inclusive, providing 20 examples per query and 4420 examples in total. We remark that no feature explicitly indicates which specific version numbers are given and which are to be predicted. (\ah{Discuss the gap: \textit{We evaluated the quality of our proposal by forming a set of classifiers to predict the change of 221 queries in 15 versions, which is equivalent to 3315 objects to classify, described in terms of our proposed features.}}) \ah{Could we do experiments with different intervals?}
+\paragraph{Setting:} To build our final datasets, given that our data features are temporal based, we must thus define a past interval to consider. With 23 versions, we must hold out at least one version to label, leaving a maximum interval of 22 past versions to use for compute our data features. However, the more past versions we consider for a prediction, the fewer examples we can generate; for example, if we consider 22 versions for compute, we will only have one ground truth label for each query. In the end, we opted to consider intervals of 3, 5, 9 and 17 previous versions, for example, ($G_{i-3}, G_{i-2}, G_{i-1}$) to predict changes in queries results for the subsequent version ($G_i$); this allows us to predict from $G_4$ to $G_{23}$ inclusive, providing 20 examples per query and 4420 examples in the largest dataset and 1326 examples in the smallest dataset. We remark that no feature explicitly indicates which specific version numbers are given and which are to be predicted.
 
-In the case of predicate dynamics, as discussed in Section~\ref{sec:approach}, there are potentially many predicates per query, each with its own value for $\Delta(\mathcal{G},p)$, where to reduce (and fix) dimensionality, we may apply an aggregate function to choose the min, max or mean value over all predicates. In preliminary experiments, we found the mean value to offer the best results, followed by the max value; hence in what follows we adopt the mean value in our experiments.
+In the case of predicate dynamics, as discussed in Section~\ref{sec:approach}, there are potentially many predicates per query, each with its own value for $\Delta(\mathcal{G},p)$, where to reduce (and fix) dimensionality, we may apply an aggregate function to choose the min, max or mean value over all predicates.  \ah{In preliminary experiments, we found the mean value to offer the best results, followed by the max value; hence in what follows we adopt the mean value in our experiments.}
 
-We tested the Pearson correlation ($\rho$) between the features available in our data. We found only one pair of highly correlated variables: \textbf{\textnumero\ of triple patterns} and \textbf{\textnumero\ of variables} ($\rho = 0.943$). \ah{Not sure about this part: what does it add? What does ``highly correlated mean?'' Also it's surprising that, e.g., \textbf{\textnumero of predicates} is not also highly correlated here.}
-
-For OSC prediction, we selected four classifiers for testing: Decision Trees, Linear SVM, Naive Bayes and Nearest Neighbors. We split the data to use 80\% for training and 20\% for tests. To avoid overfitting, we use cross-validation in the training data. We consider three types of features: static query features (\textsc{q}): predicate dynamics (\textsc{p}) and information on historical results (\texttt{r}). \ah{We should be more explicit on precisely what \textsc{r} is?} We may also consider combinations of these features: \textsc{qp}, \textsc{qs}, \textsc{pr} and \textsc{qpr}. In our experiments, we compare \textsc{qp} with \textsc{r}. \ah{Is this correct? Or would it be \textsc{qr}?} \ah{Why only 2? Could we not compare all seven?}
+For OSC prediction, we selected four classifiers for testing: Decision Trees, Linear SVM, Naive Bayes and Nearest Neighbors. We split the data to use 80\% for training and 20\% for tests. To avoid overfitting, we use stratified cross-validation in the training data. We consider three types of features: static query features (\textsc{q}): predicate dynamics (\textsc{p}) considering information of $\Delta(\mathcal{G},p)$ and the cardinality of predicates and information on historical results (\texttt{r}) considering both, the number of past changes in the fixed interval and the cardinalities of those changes divided by the sizes of query results. We may also consider combinations of these features: \textsc{qp}, \textsc{qr}, \textsc{pr} and \textsc{qpr}.
 
 
 %In the case of predicate dynamics, as discussed in Section~\ref{sec:approach}, there are potentially many predicates per query, each with its own value for $\Delta(\mathcal{G},p)$, where to reduce (and fix) dimensionality, we may apply an aggregate function to choose the min, max or mean value over all predicates. In preliminary experiments, we found the mean value to offer the best results, followed by the max value; hence in what follows we adopt the mean value in our experiments.
@@ -992,26 +992,42 @@ For OSC prediction, we selected four classifiers for testing: Decision Trees, Li
 %Then we configure the parameters of our model. For the time interval, we consider three versions of the dataset equivalent to the last three weeks. As the Transformation Function, we evaluate three basic functions: Maximum, Minimum, and Average. For example, Maximum will take the dynamics of the most dynamic property (used as a predicate in the query) as a feature.
 %In addition, given that existing approaches are based on the historical results of the queries, we evaluate the substitution of our model for a historical change indicator that counts how many times the results have changed in the last three weeks.
 
-In addition, we train a Machine Learning model to determine the TTL of a query's results. To train the model we consider the changes observed in the monitored interval. For each update of the results of a query, we have created an example of training with the previously presented features. The target TTL value that we learn is the time interval during which the results of the query remain fresh from the current update time. \ah{This paragraph is a little vague/unclear to me.}
+In addition, we train a Machine Learning model to determine the TTL of a query's results. To train the model we consider the changes observed in the monitored interval. For each update of the results of a query, we have created a training example with the previously presented features. The target TTL value that we learn is the time interval during which the results of the query remain fresh from the previous update time. As an example, suppose that the query q change three times ($G_{3}, G_{7}, G_{9}$) over all versions, we consider two examples from $G_{3}$ and $G_{7}$ with target TTL value 4 and 2 respectively.
 
 \paragraph{Results:} Table~\ref{tab:classifier} shows the $F_1$-measure for the predictions made; for reference, we include a baseline that randomly guesses yes/no. With the highest result being an $F_1$-measure of 0.706, the results show that predicting changes in query results is indeed a challenging problem; on the other hand, all configurations clearly outperform the random baseline. Looking in further detail, as can be expected, prediction performs best when the \textsc{r} feature -- with knowledge of changes in the historical value of results of the input query -- is available. However, the \textsc{qp} features -- which do not assume the availability of such information -- are often competitive: more specifically, the best result for \textsc{r} is 0.706 with Linear SVM, while the best results for \textsc{qp} is 0.651 with Decision Trees. 
 
 Finally, to predict the TTL of the results of the query -- outputting the number of versions for which the query results can be expected to remain the same -- we employed techniques of multiple linear regression using the \textsc{sklearn} and \textsc{tensorflow} libraries. The latter allows us to see how the periods of estimation and the convergence analysis will behave. We were able to predict the TTL (in relation to the number of invariant weeks) with an average square error of 0.43 and a variance score of 0.01. These results allow to predict future changes in query results with good accuracy using linear regression techniques. \ah{Could do with a comparison here; the 0.43 result is quite abstract.}
 
-
 \begin{table*}[t]
-	\centering
-	\caption{$F_1$-measure for tested classifiers on OSC}
-	\label{tab:classifier}
-	\begin{tabular}{lrr}    \toprule	
-		\textbf{Classifier}                   & \textsc{r} & \textsc{qp} \\    \midrule
-		\textit{Random Baseline}				 & 0.497869 & 0.486923 \\\midrule
-		Decision Trees                & 0.695591 & \underline{0.651462} \\
-		Linear SVM                   & \underline{0.705755} & 0.593846 \\
-		Naive Bayes                  & 0.661239 & 0.587692 \\ 
-		Nearest Neighbors            & 0.701587 & 0.635923 \\   \bottomrule
+	\begin{tabular}{lrrrrrrr}    \toprule
+		\textbf{Classifier}        & \textsc{Q}         & \textsc{P}         & \textsc{R}         & \textsc{QP}        & \textsc{QR}        & \textsc{PR}        & \textsc{QPR}       \\    \midrule
+		\textit{Random Baseline}   & 0.5002262 & 0.5126697 & 0.5027149 & 0.511086  & 0.5031674 & 0.5063348 & 0.4979638 \\
+		Decision Trees    & 0.4708145 & 0.5233032 & 0.7821267 & 0.4857466 & 0.5671946 & 0.6803167 & 0.6047511 \\
+		Naive Bayes       & 0.5169683 & 0.4647059 & 0.7638009 & 0.5242081 & 0.5420814 & 0.7588235 & 0.5337104 \\
+		Nearest Neighbors & 0.4846154 & 0.5106335 & 0.7819005 & 0.5056561 & 0.6776018 & 0.7760181 & 0.6832579 \\
+		Linear SVM        & 0.5914027 & 0.5108597 & 0.7638009 & 0.5914027 & 0.7751131 & 0.7647059 & 0.7746606 \\    \midrule
+		\textbf{Better}            & 0.5914027 & 0.5233032 & 0.7821267 & 0.5914027 & 0.7751131 & 0.7760181 & 0.7746606 \\    \bottomrule
+		\textit{Random Baseline}   & 0.5010055 & 0.5005028 & 0.4959779 & 0.4987431 & 0.4974862 & 0.4856712 & 0.4816491 \\
+		Decision Trees    & 0.4497235 & 0.5294118 & 0.782554  & 0.4954751 & 0.5723982 & 0.688537  & 0.6289593 \\
+		Naive Bayes       & 0.5160885 & 0.4705882 & 0.7946204 & 0.5160885 & 0.5510307 & 0.7787833 & 0.5334339 \\
+		Nearest Neighbors & 0.5125691 & 0.5296631 & 0.7868276 & 0.5115636 & 0.6792358 & 0.7875817 & 0.6726998 \\
+		Linear SVM        & 0.5957768 & 0.5075415 & 0.7946204 & 0.5849673 & 0.7895928 & 0.7885872 & 0.7880845 \\    \midrule
+		\textbf{Better}            & 0.5957768 & 0.5296631 & 0.7946204 & 0.5849673 & 0.7895928 & 0.7885872 & 0.7880845 \\    \bottomrule
+		\textit{Random Baseline}   & 0.4961215 & 0.5087266 & 0.5054945 & 0.487395  & 0.512605  & 0.4938591 & 0.5090498 \\
+		Decision Trees    & 0.448287  & 0.54234   & 0.7918552 & 0.4974144 & 0.6263736 & 0.7117001 & 0.6764706 \\
+		Naive Bayes       & 0.5258565 & 0.4605688 & 0.7983193 & 0.5235941 & 0.5688429 & 0.7685844 & 0.5585003 \\
+		Nearest Neighbors & 0.5206852 & 0.5336134 & 0.789916  & 0.5310278 & 0.6706529 & 0.7886231 & 0.6780866 \\
+		Linear SVM        & 0.5727214 & 0.5       & 0.7983193 & 0.5688429 & 0.7957337 & 0.7950873 & 0.7947641 \\    \midrule
+		\textbf{Better}          & 0.5727214 & 0.54234   & 0.7983193 & 0.5688429 & 0.7957337 & 0.7950873 & 0.7947641 \\    \bottomrule
+		\textit{Random Baseline}   & 0.4766214 & 0.4962293 & 0.5067873 & 0.5030166 & 0.4788839 & 0.484917  & 0.5030166 \\
+		Decision Trees    & 0.4969834 & 0.4819005 & 0.8205128 & 0.5346908 & 0.7292609 & 0.7503771 & 0.7277526 \\
+		Naive Bayes       & 0.5090498 & 0.4834087 & 0.8280543 & 0.5037707 & 0.5791855 & 0.7978884 & 0.5874811 \\
+		Nearest Neighbors & 0.5580694 & 0.4871795 & 0.8288084 & 0.5671192 & 0.739819  & 0.8220211 & 0.7239819 \\
+		Linear SVM        & 0.5656109 & 0.5098039 & 0.8288084 & 0.5791855 & 0.8273002 & 0.8288084 & 0.8295626 \\    \midrule
+		\textbf{Better}            & 0.5656109 & 0.5098039 & 0.8288084 & 0.5791855 & 0.8273002 & 0.8288084 & 0.8295626 \\     \bottomrule
 	\end{tabular}
 \end{table*}
+
 \begin{comment}
 
 \begin{figure}
@@ -1042,9 +1058,6 @@ Our goal then was to explore this trade-off experimentally. For this, we define 
 Finally, we use this gold standard dataset to evaluate the trade-off identified between different types of features for predictions in the OSC and TTL tasks. For OSC, we evaluate the success rates of a variety of classifiers based on the $F_1$-measure of the predictions. Our results show that although features based on historical changes to query results perform best ($F_1 = 0.706$), considering static query features and predicate dynamics alone is competitive ($F_1 =0.651$) when historical results are not available or are prohibitively costly to compute.    
 
 In terms of future work, gold standards based on datasets other than Wikidata could be pursued. Also, our gold standard based on Wikidata could be extended to consider more versions spanning a longer period of time and/or more queries; as previously mentioned, a very large query dataset for Wikidata was recently published~\cite{MalyshevKGGB18} from which it should be possible to extend the Wikidata gold standard (the challenge being to keep a balance of static and dynamic queries with diverse features). Concerning the prediction tasks themselves, there are a variety of other features and approaches that could be applied; one promising direction may be, for example, to apply a more fine-grained analysis of the query, considering for example estimates of the selectivity of particular triples patterns, and combining this information with statistics on the dynamics of the data and the query operators used; our current gold standard could be used to validate such developments. Finally, it would be interesting to investigate the effectiveness of these techniques in practice, developing caching systems, synchronization schedules, and other applications, based on the proposed predictions.
-
-\ah{Some reference can be shortened to just expand the acronym, no more, for example; \textit{Advances in Information Retrieval -- 34th European Conference on IR Research, ECIR, 2012}; can become \textit{European Conference on IR Research, ECIR, 2012}. Addresses and dates are not necessary (keep the year of course). The workshop name is enough; no need to also give the conference. Keeping the publisher for conference is good, but maybe IEEE Computer Society can become IEEE.}
-
 
 \bibliographystyle{splncs04}
 \bibliography{ref}
