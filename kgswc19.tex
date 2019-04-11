@@ -996,17 +996,17 @@ For OSC prediction, we selected four classifiers for testing: Decision Trees, Li
 
 In addition, we train a Machine Learning model to determine the TTL of a query's results. To train the model we consider the changes observed in the monitored interval. For each update of the results of a query, we have created a training example with the previously presented features. The target TTL value that we learn is the time interval during which the results of the query remain fresh from the previous update time. As an example, suppose that the query q change three times ($G_{3}, G_{7}, G_{9}$) over all versions, we consider two examples from $G_{3}$ and $G_{7}$ with target TTL value 4 and 2 respectively.
 
-\paragraph{Results:} Table~\ref{tab:classifier} shows the $F_1$ -measure for the predictions made considering the union of different combinations of the sets of features (Q, P, R) and varying the window sizes (3, 5, 9 , 17); for reference, we include a baseline that randomly guesses yes / no. 
-We can notice the best results were obtained using the characteristics of R reaching values ​​of 0.83 of f1. The results show that predicting changes in query results is indeed a challenging problem. Looking in further detail, as can be expected, prediction performs best when the \ textsc {r} feature - with knowledge of changes in the historical value of results of the input query - is available. And, the features from sets \textsc {q} and  \textsc {p} - which do not assume the availability of such information - obtain less F1-score: more specifically, the best result using \ textsc {pr} is 0.83 with Linear SVM, window size 17, while the best results without \ textsc {r} is 0.60 with Linear SVM, window size 5.
+\paragraph{Results:} Table~\ref{tab:classifier} shows the $F_1$-score for the predictions made considering the union of different combinations of the sets of features (Q, P, R) and varying the window sizes (3, 5, 9, 17); for reference, we include a baseline that randomly guesses yes/no. 
+We can note the best results were obtained using the features from \textsc{r} reaching values ​​of 0.83 of $F_1$. The results show that predicting changes in query results is indeed a challenging problem. Looking in further detail, as can be expected, prediction performs best when the \textsc{r} feature - with knowledge of changes in the historical value of results of the input query - is available. And, the features from sets \textsc{q} and  \textsc{p} - which do not assume the availability of such information - obtain less $F_1$-score: more specifically, the best result was using \textsc{pr} (0.83) with Linear SVM and window size 17, while the best results without \textsc{r} was using \textsc{Q} (0.60) with Linear SVM and window size 5.
 
-Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the window influences the quality of the results when considering r, being better as the window increases. However, these results are not affected when we consider only predicates in q or p. Also, we show, on the other hand, that all configurations outperform the random baseline.
+Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the window influences the quality of the results when considering \textsc{r}, being better as the window increases. However, these results are not affected when we consider only predicates in \textsc{q} or  \textsc{p}. Also, we show, that all configurations outperform the random baseline.
 
 % Please add the following required packages to your document preamble:
 % \usepackage[normalem]{ulem}
 % \useunder{\uline}{\ul}{}
 \begin{table*}[t]
 	\centering
-	\caption{$F_1$-measure for tested classifiers considering different sets of features (Q, P, R) and varying the the window sizes (3,5,9,17)}
+	\caption{$F_1$-score for tested classifiers considering different sets of features (Q, P, R) and window sizes (3,5,9,17)}
 	\label{tab:classifier}
 	\begin{tabular}{l@{\hskip 0.1in}l@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r}    \toprule		  
 		& \textbf{Classifier}        & \textsc{Q}         & \textsc{P}         & \textsc{R}         & \textsc{QP}        & \textsc{QR}        & \textsc{PR}        & \textsc{QPR}       \\    \midrule
@@ -1040,27 +1040,43 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 \begin{figure}[t]
 	%\begin{minipage}[b]{0.30\linewidth}
 	\centering
-	\begin{tikzpicture}[thick,font=\scriptsize]
+	\begin{tikzpicture}[thick,font=\scriptsize,scale=0.95]
 	\begin{axis}[
 	%title={Temperature dependence of CuSO$_4\cdot$5H$_2$O solubility},
 	xlabel={F1},
 	width=5cm, 
 	height=5cm,
 	ymin=0,
-	xtick={1,2,...,4},
+	xtick={3,5,9,17},
 	xticklabels={},
-	extra x ticks={1,23},
+	extra x ticks={3,5,9,17},
 	legend pos=north west,
 	ymajorgrids=true,
 	grid style=dashed,
 	]
 	
 	\addplot[
-	color=blue,
+	color=red,
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.596)(2,0.6)(3,0.578)(4,0.554)
+		(3,0.516)(5,0.505)(9,0.515)(17,0.524)
+	};
+	
+	\addplot[
+	color=brown,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.596)(5,0.6)(9,0.578)(17,0.554)
+	};
+	
+	\addplot[
+	color=green,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.519)(5,0.535)(9,0.528)(17,0.511)
 	};
 	
 	\addplot[
@@ -1068,7 +1084,15 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.519)(2,0.535)(3,0.528)(4,0.511)
+		(3,0.781)(5,0.795)(9,0.797)(17,0.827)
+	};
+	
+	\addplot[
+	color=black,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.593)(5,0.59)(9,0.571)(17,0.56)
 	};
 	
 	\addplot[
@@ -1076,7 +1100,7 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.781)(2,0.795)(3,0.797)(4,0.827)
+		(3,0.775)(5,0.787)(9,0.795)(17,0.819)
 	};
 	
 	\addplot[
@@ -1084,7 +1108,7 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.593)(2,0.59)(3,0.571)(4,0.56)
+		(3,0.781)(5,0.797)(9,0.8)(17,0.831)
 	};
 	
 	\addplot[
@@ -1092,23 +1116,7 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.775)(2,0.787)(3,0.795)(4,0.819)
-	};
-	
-	\addplot[
-	color=blue,
-	mark=diamond,
-	]
-	coordinates {
-		(1,0.781)(2,0.797)(3,0.8)(4,0.831)
-	};
-	
-	\addplot[
-	color=blue,
-	mark=diamond,
-	]
-	coordinates {
-		(1,0.774)(2,0.787)(3,0.796)(4,0.815)
+		(3,0.774)(5,0.787)(9,0.796)(17,0.815)
 	};
 	
 	%\legend{# entities}
@@ -1124,27 +1132,43 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	\hspace{0.1cm}
 	%	\begin{minipage}[b]{0.30\linewidth}
 	%		\centering
-	\begin{tikzpicture}[thick,font=\scriptsize]
+	\begin{tikzpicture}[thick,font=\scriptsize,scale=0.95]
 	\begin{axis}[
 	%title={Temperature dependence of CuSO$_4\cdot$5H$_2$O solubility},
 	xlabel={Precision},
 	width=5cm, 
 	height=5cm,
 	ymin=0,
-	xtick={1,2,...,23},
+	xtick={3,5,9,17},
 	xticklabels={},
-	extra x ticks={1,23},
+	extra x ticks={3,5,9,17},
 	legend pos=north west,
 	ymajorgrids=true,
 	grid style=dashed,
 	]
 	
 	\addplot[
-	color=blue,
+	color=red,
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.598)(2,0.601)(3,0.601)(4,0.619)
+		(3,0.516)(5,0.505)(9,0.515)(17,0.524)
+	};
+	
+	\addplot[
+	color=brown,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.598)(5,0.601)(9,0.601)(17,0.619)
+	};
+	
+	\addplot[
+	color=green,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.52)(5,0.535)(9,0.528)(17,0.512)
 	};
 	
 	\addplot[
@@ -1152,7 +1176,15 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.52)(2,0.535)(3,0.528)(4,0.512)
+		(3,0.796)(5,0.798)(9,0.798)(17,0.828)
+	};
+	
+	\addplot[
+	color=black,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.596)(5,0.591)(9,0.589)(17,0.579)
 	};
 	
 	\addplot[
@@ -1160,7 +1192,7 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.796)(2,0.798)(3,0.798)(4,0.828)
+		(3,0.775)(5,0.787)(9,0.795)(17,0.819)
 	};
 	
 	\addplot[
@@ -1168,7 +1200,7 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.596)(2,0.591)(3,0.589)(4,0.579)
+		(3,0.782)(5,0.797)(9,0.8)(17,0.831)
 	};
 	
 	\addplot[
@@ -1176,23 +1208,7 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.775)(2,0.787)(3,0.795)(4,0.819)
-	};
-	
-	\addplot[
-	color=blue,
-	mark=diamond,
-	]
-	coordinates {
-		(1,0.782)(2,0.797)(3,0.8)(4,0.831)
-	};
-	
-	\addplot[
-	color=blue,
-	mark=diamond,
-	]
-	coordinates {
-		(1,0.774)(2,0.787)(3,0.796)(4,0.815)
+		(3,0.774)(5,0.787)(3,0.796)(4,0.815)
 	};
 	
 	%\legend{# entities}
@@ -1208,27 +1224,43 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	\hspace{0.1cm}
 	%	\begin{minipage}[b]{0.30\linewidth}
 	%		\centering
-	\begin{tikzpicture}[thick,font=\scriptsize]
+	\begin{tikzpicture}[thick,font=\scriptsize,scale=0.95]
 	\begin{axis}[
 	%title={Temperature dependence of CuSO$_4\cdot$5H$_2$O solubility},
 	xlabel={Recall},
 	width=5cm, 
 	height=5cm,
 	ymin=0,
-	xtick={1,2,...,23},
+	xtick={3,5,9,17},
 	xticklabels={},
-	extra x ticks={1,23},
+	extra x ticks={3,5,9,17},
 	legend pos=north west,
 	ymajorgrids=true,
 	grid style=dashed,
 	]
 	
 	\addplot[
-	color=blue,
+	color=red,
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.598)(2,0.601)(3,0.579)(4,0.554)
+		(3,0.516)(5,0.505)(9,0.515)(17,0.524)
+	};
+	
+	\addplot[
+	color=brown,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.598)(5,0.601)(9,0.579)(17,0.554)
+	};
+	
+	\addplot[
+	color=green,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.52)(5,0.535)(9,0.528)(17,0.512)
 	};
 	
 	\addplot[
@@ -1236,7 +1268,15 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.52)(2,0.535)(3,0.528)(4,0.512)
+		(3,0.787)(5,0.794)(9,0.798)(17,0.828)
+	};
+	
+	\addplot[
+	color=black,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.595)(5,0.591)(9,0.572)(17,0.561)
 	};
 	
 	\addplot[
@@ -1244,7 +1284,7 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.787)(2,0.794)(3,0.798)(4,0.828)
+		(3,0.775)(5,0.787)(9,0.796)(17,0.819)
 	};
 	
 	\addplot[
@@ -1252,7 +1292,7 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.595)(2,0.591)(3,0.572)(4,0.561)
+		(3,0.783)(5,0.797)(9,0.8)(17,0.831)
 	};
 	
 	\addplot[
@@ -1260,23 +1300,7 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.775)(2,0.787)(3,0.796)(4,0.819)
-	};
-	
-	\addplot[
-	color=blue,
-	mark=diamond,
-	]
-	coordinates {
-		(1,0.783)(2,0.797)(3,0.8)(4,0.831)
-	};
-	
-	\addplot[
-	color=blue,
-	mark=diamond,
-	]
-	coordinates {
-		(1,0.774)(2,0.788)(3,0.796)(4,0.815)
+		(3,0.774)(5,0.788)(9,0.796)(17,0.815)
 	};
 	
 	%\legend{# entities}
@@ -1290,7 +1314,7 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 		\label{fig:result}}
 \end{figure}
 
-Finally, to predict the TTL of the results of the query -- outputting the number of versions for which the query results can be expected to remain the same -- we employed techniques of multiple linear regression using the \textsc{sklearn}. The latter allows us to see how the periods of estimation and the convergence analysis will behave. We were able to predict the TTL (in relation to the number of invariant weeks) with an average square error of 0.43 weeks and a variance score of 0.01. These results allow to predict future changes in query results with good accuracy using linear regression techniques.
+Finally, to predict the TTL of the results of the query -- outputting the number of versions for which the query results can be expected to remain the same -- we employed techniques of multiple linear regression using the \textsc{sklearn} library. The latter allows us to see how the periods of estimation and the convergence analysis will behave. We were able to predict the TTL (in relation to the number of invariant weeks) with an average square error of 0.43 weeks and a variance score of 0.01. These results allow to predict future changes in query results with good accuracy using linear regression techniques.
 
 
 
@@ -1323,7 +1347,7 @@ Our goal then was to explore this trade-off experimentally. For this, we define 
 
 Finally, we use this gold standard dataset to evaluate the trade-off identified between different types of features for predictions in the OSC and TTL tasks. For OSC, we evaluate the success rates of a variety of classifiers based on the $F_1$-measure of the predictions. Our results show that the features based on historical changes to query results perform best ($F_1 = 0.83$), considering static query features and predicate dynamics alone is less competitive ($F_1 =0.60$) when historical results are not available or are prohibitively costly to compute.    
 
-In terms of future work, gold standards based on datasets other than Wikidata could be pursued. Also, our gold standard based on Wikidata could be extended to consider more versions spanning a longer period of time and/or more queries; as previously mentioned, a very large query dataset for Wikidata was recently published~\cite{MalyshevKGGB18} from which it should be possible to extend the Wikidata gold standard (the challenge being to keep a balance of static and dynamic queries with diverse features). Concerning the prediction tasks themselves, there are a variety of other features and approaches that could be applied; one promising direction may be, for example, to apply a more fine-grained analysis of the query, considering for example estimates of the selectivity of particular triples patterns, and combining this information with statistics on the dynamics of the data and the query operators used; our current gold standard could be used to validate such developments. Finally, it would be interesting to investigate the effectiveness of these techniques in practice, developing caching systems, synchronization schedules, and other applications, based on the proposed predictions.
+In terms of future work, gold standards based on datasets other than Wikidata could be pursued. Also, our gold standard based on Wikidata could be extended to consider more versions spanning a longer period of time and/or more queries; as previously mentioned, a very large query dataset for Wikidata was recently published~\cite{MalyshevKGGB18} from which it should be possible to extend the Wikidata gold standard (the challenge being to keep a balance of static and dynamic queries with diverse features). Concerning the prediction tasks themselves, there are a variety of other features and approaches that could be applied; one promising direction may be, for example, to apply a more fine-grained analysis of the query, considering for example estimates of the selectivity of particular triples patterns, and combining this information with statistics on the dynamics of the data and the query operators used; our current gold standard could be used to validate such developments. Finally, it would be interesting to investigate the effectiveness of these techniques in practice, developing caching systems, synchronization schedules, and other applications, based on the evaluated predictions.
 
 \bibliographystyle{splncs04}
 \bibliography{ref}
