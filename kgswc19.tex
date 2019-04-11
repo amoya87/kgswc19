@@ -14,6 +14,12 @@
 \usepgfplotslibrary{clickable}
 \usetikzlibrary{shapes,arrows,positioning,fit,backgrounds,matrix,chains,patterns,trees,calc,arrows.meta}
 
+\makeatletter \renewcommand\subsubsection{\@startsection{subsubsection}{4}{\z@}%
+	{1ex \@plus0ex \@minus0ex}% 
+	{-1ex}% 
+	{\normalfont\normalsize\bfseries}} 
+\makeatother
+
 \usepackage{textcomp}
 \usepackage{amssymb}
 \usepackage{xspace}
@@ -37,11 +43,12 @@
 \definecolor{dark-green}{rgb}{0.0,0.2,0.0}
 \definecolor{dark-red}{rgb}{0.2,0.0,0.0}
 \hypersetup{
-    colorlinks, linkcolor={dark-red},
+    colorlinks, 
+    linkcolor={dark-red},
     citecolor={dark-green}, urlcolor={dark-blue},
-    pdftitle={Estimating the dynamics of SPARQL query results over Wikidata},    % title
-    pdfauthor={Alberto Moya, Aidan Hogan},     % author
-    pdfsubject={KGSWC 2019},   % subject of the document
+    pdftitle={Estimating the dynamics of SPARQL query results},    % title
+%    pdfauthor={Alberto Moya, Aidan Hogan},     % author
+    pdfsubject={ISWC 2019},   % subject of the document
     pdfkeywords={SPARQL;} {Linked Data;} {Dynamics;} {Wikidata;}, % list of keywords
 }
 
@@ -142,26 +149,28 @@
 
 \begin{document}
 %
-\title{Estimating the dynamics of\\SPARQL query results over Wikidata\thanks{This work was supported by CONICYT PFCHA, Doctorado Becas Chile/2017 -- 72180000, the Millennium Institute for Foundational Research on Data (IMFD) and FONDECYT Grant No. 1181896.}}
+\title{Estimating the dynamics of \\SPARQL query results
+%\thanks{This work was supported by CONICYT PFCHA, Doctorado Becas Chile/2017 -- 72180000, the Millennium Institute for Foundational Research on Data (IMFD) and FONDECYT Grant No. 1181896.}
+}
 %
 %\titlerunning{Abbreviated paper title}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-\author{Alberto Moya \and
-Aidan Hogan\orcidID{0000-0001-9482-1982}}
+%\author{Alberto Moya\orcidID{0000-0002-7003-5087} \and 
+%Aidan Hogan\orcidID{0000-0001-9482-1982}}
 %
-\authorrunning{A. Moya and A. Hogan}
+%\authorrunning{A. Moya and A. Hogan}
 % First names are abbreviated in the running head.
 % If there are more than two authors, 'et al.' is used.
 %
-\institute{IMFD; DCC, University of Chile\\
-\email{\{amoya,ahogan\}@dcc.uhile.cl}}
+%\institute{IMFD; DCC, University of Chile\\
+%\email{\{amoya,ahogan\}@dcc.uhile.cl}}
 %
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-We address the problem of estimating when the results of an input SPARQL query results over dynamic RDF datasets will change. We propose a framework that extracts features from the query and/or from past versions of the target dataset. The resulting features are then used to predict (1) whether or not the results for a query will change in the near future using classifiers, and (2) when they might change (if at all) using linear regression. To evaluate our proposal, we create a gold standard based on 23 versions of Wikidata and a curated collection of 221 SPARQL queries. Our results show that the quality of predictions using query features and lightweight statistics of the dynamics of individual predicates is competitive with that obtained using (more costly to derive) knowledge of the complete historical changes in the query results.
+We address the problem of estimating when the results of an input SPARQL query results over dynamic RDF datasets will change. We evaluate a framework that extracts features from the query and/or from past versions of the target dataset. The resulting features are then used to predict (1) whether or not the results for a query will change in the near future using classifiers, and (2) when they might change (if at all) using linear regression. To evaluate, we create a gold standard based on 23 versions of Wikidata and a curated collection of 221 SPARQL queries. Our results show that the quality of predictions using query features and lightweight statistics of the dynamics of individual predicates is less competitive with that obtained using (more costly to derive) knowledge of the complete historical changes in the query results.
 
 \keywords{SPARQL \and Linked Data \and Dynamics \and Wikidata}
 \end{abstract}
@@ -175,15 +184,15 @@ Many applications that consume Linked Data (LD) face challenges related to remot
 
 Since datasets change over time, long-running applications that cache and repeatedly use query results obtained from an external SPARQL endpoint may resubmit the queries regularly to ensure up-to-dateness. As a result, without further information as to the dynamics of a particular SPARQL query, applications face the choice of either performing frequent query executions that may be redundant and repeatedly return the same results (aiming for stronger consistency at the cost of more frequent updates), or performing infrequent query executions that may lead to stale data being persisted in the application when the underlying sources change (accepting weaker consistency to improve efficiency/scalability). Given the costs on clients and servers of repetitive requests served over the Web  and the potential efficiency gains offered by local caches, several weak consistency approaches have been proposed that try to keep the local data of the applications updated at lower cost by predicting changes~\cite{KnuthHS16,DividinoGS15,NishiokaS17}.
 
-Some works \ah{Which? Cite at the end of the sentence} have proposed to predict dynamics based on the historical evolution of entities, but following such an approach for SPARQL queries is expensive because (1) a SPARQL query may involve potentially many entities; and (2) it is necessary to have the previous complete versions of data to analyse the entities relevant to a query. Recent works have explored the dynamics of Linked Data with the intention of finding patterns that allow for characterizing, recognizing, and predicting changes based on analysis of the domains, predicates, and schema~\cite{UmbrichHHPD10,KaferAUOH13,NishiokaS16,NishiokaS17,GonzalezH18}. Among these works, we can find hybrid approaches that have been developed to return fresher query results with faster response times by decomposing a query into dynamic sub-queries executed remotely, and static sub-queries executed over local caches~\cite{UmbrichKHP12}, but such an approach only focuses on estimating the dynamics of individual triple patterns, and does not consider, for example, query operators. More generally, coping with changes in remote data still presents a major challenge for applications leveraging dynamic Linked Data.
+Some works study data dynamics based on the historical evolution of entities~\cite{KaferAUOH13,DividinoGSG14,NishiokaS15}, but following such an approach for SPARQL queries is expensive because (1) a SPARQL query may involve potentially many entities; and (2) it is necessary to have the previous complete versions of data to analyse the entities relevant to a query. Many works have explored the dynamics of Linked Data with the intention of finding patterns that allow for characterizing, recognizing, and predicting changes based on analysis of the domains, predicates, and schema~\cite{UmbrichHHPD10,KaferAUOH13,NishiokaS16,NishiokaS17,GonzalezH18}. Among these works are hybrid approaches developed to return fresher query results with faster response times by decomposing a query into dynamic sub-queries executed remotely, and static sub-queries executed over local caches~\cite{UmbrichKHP12}, but such an approach only focuses on estimating the dynamics of individual triple patterns, and does not consider, for example, query operators. More generally, coping with changes in remote data still presents a major challenge for applications leveraging dynamic Linked Data.
 
-In this work, we address the problem of estimating if and/or when SPARQL query results will change in a future version of a dynamic RDF dataset. We propose a general architecture based on Machine Learning that extracts static features from a query, as well as dynamic features from the query and dataset. These features are fed into a classifier to predict whether or not the query results will change in a fixed point in the future, or, more ambitiously, can be fed into a regression model to predict when the query results are likely to change. With respect to the features used, we propose that there is a trade-off between those that are coarse-grained but easy to compute (e.g., static query features) versus those that are fine-grained but more costly to compute (e.g., historical changes in query results), with further features falling in the middle (e.g., high-level statistics about the dynamics of triples with particular predicates). Per this trade-off, which features to use for predicting the dynamics of query results may then depend on the particular application.
+In this work, we address the problem of estimating if and/or when SPARQL query results will change in a future version of a dynamic RDF dataset. We evaluate a general architecture based on Machine Learning that extracts static features from a query, as well as dynamic features from the query and dataset. These features are fed into a classifier to predict whether or not the query results will change in a fixed point in the future, or, more ambitiously, can be fed into a regression model to predict when the query results are likely to change. With respect to the features used, we show that there is a trade-off between those that are coarse-grained but easy to compute (e.g., static query features) versus those that are fine-grained but more costly to compute (e.g., historical changes in query results), with further features falling in the middle (e.g., high-level statistics about the dynamics of triples with particular predicates). Per this trade-off, which features to use for predicting the dynamics of query results may then depend on the particular application.
 
-In order to better understand this conceptual trade-off -- and more generally, to evaluate the quality of predictions made by our framework -- we create a novel gold standard based on 23 weekly versions of the Wikidata knowledge graph~\cite{VrandecicK14} and 221 user-generated queries; we show this gold standard to have a variety of desirable features, including (most importantly) a balance of queries whose results never change, always change, as well as non-trivial queries whose results intermittently change. Using this gold standard, our experiments show that while the most accurate predictions are based on historical changes to the input query's results, predictions based only on query features and predicate dynamics remain competitive (while being much more efficient to maintain/extract).
+In order to better understand this conceptual trade-off -- and more generally, to evaluate the quality of predictions made by our framework -- we create a novel gold standard based on 23 weekly versions of the Wikidata knowledge graph~\cite{VrandecicK14} and 221 user-generated queries; we show this gold standard to have a variety of desirable features, including (most importantly) a balance of queries whose results never change, always change, as well as non-trivial queries whose results intermittently change. Using this gold standard, our experiments show that while the most accurate predictions are based on historical changes to the input query's results, predictions based only on query features and predicate dynamics remain less competitive (while being much more efficient to maintain/extract).
 
-\paragraph{Contributions:} (1) We propose a general architecture for predicting when/if the results of a SPARQL query will change in a future version of a dynamic RDF dataset. (2) We propose a number of features to instantiate this architecture based on analysis of the query, analysis of the dynamics of predicates in the data, and analysis of historical changes in the query results. (3) We create a gold standard for these tasks based on 23 weekly versions of Wikidata and a set of 221 real-world SPARQL queries. (4) We use this gold standard to compare the predictions obtained using different types of features and classifiers.
+\paragraph{Contributions:} (1) We evaluate a general architecture for predicting when/if the results of a SPARQL query will change in a future version of a dynamic RDF dataset. (2) We evaluate a number of features to instantiate this architecture based on analysis of the query, analysis of the dynamics of predicates in the data, and analysis of historical changes in the query results. (3) We create a gold standard for these tasks based on 23 consecutive versions of Wikidata and a set of 221 real-world SPARQL queries. (4) We use this gold standard to compare the predictions obtained using different types of features and classifiers.
 
-\paragraph{Paper structure:} In Section~\ref{sec:related}, we review related works. Section~\ref{sec:preliminar} provides a formal statement of the problem. Section~\ref{sec:approach} describes our proposed architecture and features. In Section~\ref{sec:data}, we describe the creation of our gold standard based on Wikidata. Section~\ref{sec:eval} presents the design and results of the experiments. We conclude and review future directions in Section~\ref{sec:conclusion}.
+%\paragraph{Paper structure:} In Section~\ref{sec:related}, we review related works. Section~\ref{sec:preliminar} provides a formal statement of the problem. Section~\ref{sec:approach} describes the evaluated architecture and features. In Section~\ref{sec:data}, we describe the creation of our gold standard based on Wikidata. Section~\ref{sec:eval} presents the design and results of the experiments. We conclude and review future directions in Section~\ref{sec:conclusion}.
 
 %
 \section{Related Work}
@@ -202,7 +211,7 @@ On the other hand, a variety of works have looked at building models of remote d
 
 Specifically regarding the dynamics of SPARQL query results, Passant and Mendes~\cite{PassantM10} proposed \textsc{sparqlPuSH} as a notification framework based  on \textsc{PubSubHubBub} (recently standardized as \textsc{WebSub}~\cite{webSub18}) aiming for strong consistency. On the other hand, aiming for weak consistency, Umbrich et al.~\cite{UmbrichKHP12,UmbrichKPPH12,ekawUmbrichKHP12} proposed various methods to obtain knowledge about dynamics for different query patterns, mainly based on predicates. Dehghanzadeh et al.~\cite{DehghanzadehPKUHD14} later proposed a method to estimate the freshness using cardinality estimation techniques based on predicates and characteristic sets. Combining the notion of subscription-based notifications and predicting dynamics, Knuth et al.~\cite{KnuthHS16} propose a middleware to which consumers may subscribe that periodically ranks and schedules refreshes for queries according to policies that take into account how likely the results are to be stale, how long ago the query was last refreshed, how many results previously changed, how long the query takes to run, etc. 
 
-\paragraph{Novelty:} Given a query and a dynamic RDF dataset, we aim to predict (1) whether or not the query's results will have changed in a fixed point in the near future and/or (2) when the results will change. Our work thus complements existing works aiming for weak consistency, but (i) generalizes the problem, proposing a framework that can incorporate statistics on predicate dynamics~\cite{UmbrichKHP12,UmbrichKPPH12,ekawUmbrichKHP12,DehghanzadehPKUHD14} and historical changes in query results~\cite{KnuthHS16}, as proposed in prior works, as well as novel types of features, (ii) introduces new features based on query operators and statistics; (iii) creates a novel gold standard based on Wikidata and presents comparative results that indicate the relative predictive power inherent in different types of features. Furthermore, to the best of our knowledge, no prior work uses Machine Learning models to predict changes in SPARQL query results. \ah{Is this last claim true? We should try to be as sure as possible.}
+\paragraph{Novelty:} Given a query and a dynamic RDF dataset, we aim to predict (1) whether or not the query's results will have changed in a fixed point in the near future and/or (2) when the results will change. Our work thus complements existing works aiming for weak consistency, but (i) generalizes the problem, evaluating a framework that can incorporate statistics on predicate dynamics~\cite{UmbrichKHP12,UmbrichKPPH12,ekawUmbrichKHP12,DehghanzadehPKUHD14} and historical changes in query results~\cite{KnuthHS16}, as proposed in prior works, as well as novel types of features, (ii) introduces new features based on query operators and statistics; (iii) creates a novel gold standard based on Wikidata and presents comparative results that indicate the relative predictive power inherent in different types of features.
 
 %investigates the potential of using static features of a query as a lightweight alternative with the intuition that, for example, queries with more triple patterns or certain query operators are more likely to have dynamic results. For the purposes of comparison, we complement these static features with further knowledge of the dynamics of predicates~\cite{UmbrichKHP12,UmbrichKPPH12,ekawUmbrichKHP12,DehghanzadehPKUHD14} and knowledge of how results for the input query have changed over past versions~\cite{KnuthHS16}, as considered in previous works. We feed these data into Machine Learning classification and regression models to predict future changes (hence, for the purposes of supervised learning, we require knowledge of the changes of some queries over time, though not necessarily for the input query). The benefits of such an approach can be seen in a number of ways: (i) as complementing existing approaches; (ii) as an alternative to predicate-based statistics, which requires analysis of prior versions of the underlying data; (iii) as an alternative to historical results, which requires having a record of (or computing at runtime) the results of the query over several historical versions. We further remark that, to the best of our knowledge, no existing work aims to predict the dynamics of SPARQL query results using Machine Learning models. \ah{I should make this more concise later.}
 
@@ -216,7 +225,7 @@ SPARQL is the recommended query language to retrieve and manipulate data stored 
 
 Our method supports SPARQL 1.1 \texttt{SELECT} queries, which allow a variety of additional features. One key feature in this extension is that of \textit{property paths}, which allows for matching arbitrary length paths in an RDF graph, potentially returning or matching the endpoints of the path. An IRI $p$ is a \emph{path expression}; if $e$, $e_1$ and $e_2$ are path expressions, then $\texttt{\^{}}e$ (inverse of $e$), $e_1 \texttt{/} e_2$ ($e_1$ followed by $e_2$), $e_1 \texttt{|} e_2$ ($e_1$ or $e_2$), $e\texttt{*}$ (zero or more $e$), $e\texttt{+}$ (one or more $e$), $e\texttt{?}$ (zero or one $e$), and $\texttt{(}$e$\texttt{)}$ (parentheses used for precedence) are also \textit{path expressions}; finally, if $p$, $p_1$, $\ldots,$ $p_n$ are IRIs, then $\texttt{!}p$, $\texttt{!}\texttt{(}p_1 \texttt{|} \ldots \texttt{|} p_n\texttt{)}$ and $\texttt{!}\texttt{(}p_1 \texttt{|} \ldots \texttt{|} p_k \texttt{|}  \texttt{{\^{}}}p_{k+1} \texttt{|} \ldots \texttt{|} \texttt{{\^{}}}p_n\texttt{)}$ for $k+1 \leq n$ (negated property sets) are path expressions. Thereafter, a \textit{path pattern} $(s,e,o)$ where $e$ is a path expression is an expression. Other features supported in SPARQL~1.1 include sub-queries, negation, aggregation, value binding, and so forth; for brevity, we do not introduce definitions for all such features.
 
-One topic we do wish to highlight however -- as it relates to the behavior of a query over a dynamic RDF graph -- is that of the \emph{monotonicity} of SPARQL queries~\cite{ArenasP11,ArenasU17}. We say that a \texttt{SELECT} query $Q$ is monotone if and only if $G_1 \subseteq G_2$ implies that $Q(G_1) \subseteq Q(G_2)$ for RDF graphs $G_1$ and $G_2$; intuitively, as data are extended, the results of a monotone query can only be extended. Monotonic SPARQL features include, for example, joins, unions, paths and filters; on the other hand, non-monotonic SPARQL features include negation and optional~\cite{ArenasP11}.
+One topic we do wish to highlight, however -- as it relates to the behavior of a query over a dynamic RDF graph -- is that of the \emph{monotonicity} of SPARQL queries~\cite{ArenasP11,ArenasU17}. We say that a \texttt{SELECT} query $Q$ is monotone if and only if $G_1 \subseteq G_2$ implies that $Q(G_1) \subseteq Q(G_2)$ for RDF graphs $G_1$ and $G_2$; intuitively, as data are extended, the results of a monotone query can only be extended. Monotonic SPARQL features include, for example, joins, unions, paths and filters; on the other hand, non-monotonic SPARQL features include negation and optional~\cite{ArenasP11}.
 
 %\begin{table}
 %\centering
@@ -258,8 +267,6 @@ One topic we do wish to highlight however -- as it relates to the behavior of a 
 \label{sec:approach}
 
 We consider a dynamic RDF graph to be a sequence of $n$ versions of an RDF graph denoted $\mathcal{G} \da ( G_1, \ldots, G_n )$; in practice, we assume these versions to have regular intervals (e.g., hourly, daily, weekly, etc.). Further given a SPARQL (1.1) \texttt{SELECT} query $Q$, we would like to have knowledge of the dynamics of its results. The first such problem we consider -- which we call One Shot Change (OSC) -- accepts $\mathcal{G}$, $Q$ and a positive integer $k$ as input and outputs a boolean value predicting whether or not the results will change from $G_n$ to some future version $G_{n+k}$ (i.e., $Q(G_n) \neq Q(G_{n+k})$?). The second (more difficult) problem -- which we call Time-To-Live (TTL) -- accepts only $\mathcal{G}$ and $Q$ and outputs a positive integer $k$ as a prediction for the lowest such value where $Q(G_n) \neq Q(G_{n+k})$; in the case of bag semantics, we define ``$\neq$'' in terms of bag inequality, meaning that two bags of query results are different if the multiplicity of any result differs. Our problem is thus concerned with predicting if/when the results of a query will change, rather than predicting how  -- or to what extent -- they will change.
-
-\ah{Is this how we define quality under bag semantics, without \texttt{DISTINCT}? Do we consider equality of unique results, or multiplicity of results?}
 
 %Let delta ($\delta$) be a function to compute the binary dissimilarity between two results for a query $q$ with the following expression:
 %
@@ -348,7 +355,7 @@ We consider a dynamic RDF graph to be a sequence of $n$ versions of an RDF graph
 %	\label{fig:problem}
 %\end{figure}
 
-\paragraph{Architecture:} In Figure~\ref{fig:schema}, we provide an overview of our proposed architecture for making predictions with respect to the OSC and TTL tasks. A SPARQL query $Q$ and a dynamic RDF graph $\mathcal{G}$ are given as input. The first component parses the query and generates static features which include statistics about the number of elements in the query (e.g., number of triple patterns, variables, etc.) as well as the presence of particular query operators (e.g., \texttt{UNION}, \texttt{FILTER}, recursive path expressions, etc.). The second component may take as input some features of the query, as well as information from the dynamic graph, and produce a set of further features; this component may compute, for example, statistics about the dynamicity of predicates used in the query, or statistics about changes in the query results over past versions. The final features are passed to a classifier in the case of the OSC problem, and to a regression model in the case of the TTL problem, to generate the final output prediction. We will now describe in more detail the query and data features considered in this work.
+\paragraph{Architecture:} In Figure~\ref{fig:schema}, we provide an overview of a general architecture for making predictions with respect to the OSC and TTL tasks. A SPARQL query $Q$ and a dynamic RDF graph $\mathcal{G}$ are given as input. The first component parses the query and generates static features which include statistics about the number of elements in the query (e.g., number of triple patterns, variables, etc.) as well as the presence of particular query operators (e.g., \texttt{UNION}, \texttt{FILTER}, recursive path expressions, etc.). The second component may take as input some features of the query, as well as information from the dynamic graph, and produce a set of further features; this component may compute, for example, statistics about the dynamicity of predicates used in the query, or statistics about changes in the query results over past versions. The final features are passed to a classifier in the case of the OSC problem, and to a regression model in the case of the TTL problem, to generate the final output prediction. We will now describe in more detail the query and data features considered in this work.
 
 %\begin{figure*}[!t]
 %	\centering
@@ -480,13 +487,11 @@ We consider a dynamic RDF graph to be a sequence of $n$ versions of an RDF graph
 \caption{Proposed architecture for predicting change in query results\label{fig:schema}}
 \end{figure}
 
-\paragraph{Query Features:} Our initial set of features are based on analysis of the input SPARQL query. Figure~\ref{fig:query} shows the list of evaluated features, as well as -- for the purposes of illustration -- their values for an accompanying example query. 
+\paragraph{Query Features:} Our initial set of features are based on analysis of the input SPARQL query. Figure~\ref{fig:query} shows only a sample of evaluated features, as well as -- for the purposes of illustration -- their values for an example query. 
 
-The first four features capture statistics about the query, indicating loosely its size and complexity. One may consider that the higher these four values are, in general, the more dynamic we can expect the query to be since there are more ``opportunities'' for the query results to be affected by change. In some cases, however, the hypothesized correlation is not direct since, for example, adding more triple patterns may serve to narrow the query down and focus it on a static part of the graph (e.g., when looking for the movies of directors, adding a triple pattern to restrict the results to directors who have died). Hence it will be of interest to see how these features affect the predictions made experimentally.
+The first block of features capture statistics about the query, indicating loosely its size and complexity. One may consider that the higher these values are, in general, the more dynamic we can expect the query to be since there are more ``opportunities'' for the query results to be affected by change. In some cases, however, the hypothesized correlation is not direct since, for example, adding more triple patterns may serve to narrow the query down and focus it on a static part of the graph (e.g., when looking for the movies of directors, adding a triple pattern to restrict the results to directors who have died). Hence it will be of interest to see how these features affect the predictions made experimentally.
 
-The next six features indicate the query operators used; to reduce the dimensionality of the problem, we capture only a subset of popularly-used features and group related features into one dimension: in the case of \textit{Recursive path}, we group queries that contain as expression of the form $e$\texttt{*} or $e$\texttt{+}. On the other hand, in \textit{Negation}, we group non-monotonic features that allow for modeling difference (\texttt{MINUS}, \texttt{NOT EXISTS}, \texttt{OPTIONAL}, \texttt{!BOUND}). These features -- though course-grained -- are straightforward to extract from a query, and offer valuable insights into how the query may behave in a dynamic query; for example, the \textit{Negation} feature captures information about the (non-)monotonicity of the query, while we suppose that \textit{Recursive paths}, which may traverse an arbitrary number of triples in the graph, might be more sensitive to change. Again, such correlations are not without exception and will require experimental scrutiny.
-
-\ah{Is OPTIONAL not captured? Why were these features captured? Why not BIND or OFFSET or GROUP BY?}
+The second block indicates the query operators used; we capture the presence or absence of query operators and solution modifiers from SPARQL 1.1. In the third block, we group related features into one dimension: in the case of \textit{Recursive path}, we group queries that contain as expression of the form $e$\texttt{*} or $e$\texttt{+}. On the other hand, in \textit{Negation}, we group non-monotonic features that allow for modeling difference (\texttt{MINUS}, \texttt{NOT EXISTS}, \texttt{!BOUND}). These features -- though course-grained -- are straightforward to extract from a query, and offer valuable insights into how the query may behave in a dynamic query; for example, the \textit{Negation} feature captures information about the (non-)monotonicity of the query, while we suppose that \textit{Recursive paths}, which may traverse an arbitrary number of triples in the graph, might be more sensitive to change. Again, such correlations are not without exception and will require experimental scrutiny.
 
 The final feature is the set of all predicates used in a triple pattern, including (where applicable) the IRIs used in a path expression; this is rather a meta-feature that serves as input for the next part of the proposed model.
 
@@ -511,28 +516,26 @@ LIMIT 100
 	\end{lstlisting}
 	\end{minipage}}
 	\hfill
-	\resizebox{0.48\textwidth}{!}{
-	\begin{tabular}{rlr}    \toprule
-		1  & \ntextnumero of triple patterns        & 7			\\
-		2  & \ntextnumero of variables      & 3			\\
-		3  & \ntextnumero of projected variables & 1			\\
-		4  & \ntextnumero of predicates     & 6			\\ \midrule
-		5  & \texttt{FILTER}            	& \tickYes	\\
-		6  & \texttt{LIMIT}             	& \tickYes	\\
-		7  & \texttt{UNION}             	& \tickYes	\\
-		8  & \textit{Sub-query}         	& \tickNo	\\
-		9  & \textit{Recursive path}		& \tickYes	\\
-		10 & \textit{Negation}         		& \tickYes	\\ \midrule
-		11 & \textit{Predicates}			& $\{$ \texttt{:instance\_of}, ... $\}$     \\    \bottomrule
+	\resizebox{0.45\textwidth}{!}{
+	\begin{tabular}{lr}    \toprule
+		\ntextnumero of triple patterns        & 7			\\
+		\ntextnumero of variables      & 3			\\
+		\ntextnumero of projected variables & 1			\\
+		\ntextnumero of predicates     & 6			\\ \midrule
+		\texttt{FILTER}            	& \tickYes	\\
+		\texttt{LIMIT}             	& \tickYes	\\
+		\texttt{UNION}             	& \tickYes	\\
+		\texttt{GROUPBY}     & \tickNo			\\ \midrule 
+		\textit{Sub-query}         	& \tickNo	\\
+		\textit{Recursive path}		& \tickYes	\\
+		\textit{Negation}         		& \tickYes	\\ \midrule
+		\textit{Predicates}			& $\{$ \texttt{:instance\_of}, ... $\}$     \\    \bottomrule
 	\end{tabular}	
 	}
-\caption{Example query and the features extracted from it \label{fig:query}}	
+\caption{Example query and a sample of the features extracted from it \label{fig:query}}	
 \end{figure}
 
-\paragraph{Data Features (predicate dynamics):} The next component in our architecture can extract features that capture information about the query \textit{and} the dynamic graph under consideration.  The first such feature we consider captures how many triples change for a predicate in a time interval, with the idea that -- as in previous works~\cite{UmbrichKHP12,UmbrichKPPH12,ekawUmbrichKHP12,DehghanzadehPKUHD14} -- predicates capture rich information about the dynamics of a dataset, where the results of queries with dynamic predicates will be more sensitive to change; furthermore, given that in most datasets the number of predicates is relatively low (in the thousands or tens of thousand), such statistics are quite lightweight to maintain and compute. Formally, given two RDF graphs $G_i$ and $G_j$, we denote by $G_i \oplus G_j$ the set of triples $(G_i \cup G_j) - (G_i \cap G_j)$ where ``$-$'' denotes set difference; in other words, $G_i \oplus G_j$ denotes the triples in one graph or the other but not both (noting that $G_i \oplus G_j = G_j \oplus G_i$). Next, given an RDF graph $G$ and an IRI $p$, let $\#(G,p) \da |\{(x,y,z) \in G : y = p \}|$ denote the number of triples in $G$ with predicate $p$. Finally, given a dynamic RDF graph $\mathcal{G} \da ( G_1, \ldots, G_n )$ and a predicate $p$, we denote by $\Delta(\mathcal{G},p) \da \Sigma_{i=1}^{n-1} \#(G_i \oplus G_{i+1},p)$ the sum of the number of triples with the predicate $p$ that changed between pairs of consecutive versions.
-
-\ah{We don't need to define the interval in the latter function since we could project an interval from $\mathcal{G}$ when needed (more general and readable I think; e.g., $\Delta(\mathcal{G}[i,j],p)$). Also I don't get why you divide by Aggregated Predicate Multiplicity; doesn't this just scale all predicates by the same constant for an interval? I think it would perhaps make more sense to normalize by $\#(G_i \cup G_{i+1},p)$, or even just go down the route of Jaccard Similarity: $\Delta(\mathcal{G},p) \da \Sigma_{i=1}^{n-1}\frac{\#(G_i \cap G_{i+1},p)}{\#(G_i \cup G_{i+1},p)}$}
-
+\paragraph{Data Features (predicate dynamics):} The next component in our architecture can extract features that capture information about the query \textit{and} the dynamic graph under consideration.  The first such feature we consider captures how many triples change for a predicate in a time interval, with the idea that -- as in previous works~\cite{UmbrichKHP12,UmbrichKPPH12,ekawUmbrichKHP12,DehghanzadehPKUHD14} -- predicates capture rich information about the dynamics of a dataset, where the results of queries with dynamic predicates will be more sensitive to change; furthermore, given that in most datasets the number of predicates is relatively low (in the thousands or tens of thousand), such statistics are quite lightweight to maintain and compute. Formally, given two RDF graphs $G_i$ and $G_j$, we denote by $G_i \oplus G_j$ the set of triples $(G_i \cup G_j) - (G_i \cap G_j)$ where ``$-$'' denotes set difference; in other words, $G_i \oplus G_j$ denotes the triples in one graph or the other but not both (noting that $G_i \oplus G_j = G_j \oplus G_i$). Next, given an RDF graph $G$ and an IRI $p$, let $\#(G,p) \da |\{(x,y,z) \in G : y = p \}|$ denote the number of triples in $G$ with predicate $p$. Finally, given a dynamic RDF graph $\mathcal{G} \da ( G_1, \ldots, G_n )$ and a predicate $p$, we denote by $\Delta(\mathcal{G},p) \da \Sigma_{i=1}^{n-1}\frac{\#(G_i \oplus G_{i+1},p)}{\#(G_i \cup G_{i+1},p)}$ the normalized sum of the number of triples with the predicate $p$ that changed between pairs of consecutive versions.
 
 %\begin{definition}[Predicate Multiplicity of an RDF Dataset]
 %	Given an RDF dataset $d$ and a predicate $p$, the multiplicity of $p$ in $d$, denoted by $M(p,d)$, is:
@@ -692,23 +695,19 @@ LIMIT 100
 \end{figure}
 
 \begin{example}
-Consider the example dynamic RDF graph $\mathcal{G}$ in Figure~\ref{fig:dg} (based on real data from Wikidata, with IRIs modified for the purposes of readability). In Figure~\ref{fig:dgc} we show the pairwise changes between each version: $G_1 \oplus G_2$ and $G_3 \oplus G_4$. For a predicate $p$, the value $\Delta(\mathcal{G},p)$ is then the sum of triples with predicate $p$ in the graphs $G_1 \oplus G_2$ and $G_2 \oplus G_3$. Looking at Figure~\ref{fig:dgc}, for example, \texttt{:name} does not appear ($\Delta(\mathcal{G},\texttt{:name})=0$), \texttt{:children} appears twice in $G_1 \oplus G_2$ and twice in $G_2 \oplus G_3$ ($\Delta(\mathcal{G},\texttt{:children})=4$), and so forth.
+Consider the example dynamic RDF graph $\mathcal{G}$ in Figure~\ref{fig:dg} (based on real data from Wikidata, with IRIs modified for the purposes of readability). In Figure~\ref{fig:dgc} we show the pairwise changes between each version: $G_1 \oplus G_2$ and $G_3 \oplus G_4$. For a predicate $p$, the value $\Delta(\mathcal{G},p)$ is then the sum of triples with predicate $p$ in the graphs $G_1 \oplus G_2$ and $G_2 \oplus G_3$ divided by the number of triples with predicate $p$ in the graphs $G_1 \cup G_2$ and $G_2 \cup G_3$. Looking at Figure~\ref{fig:dgc}, for example, \texttt{:name} does not appear ($\Delta(\mathcal{G},\texttt{:name})=0$), \texttt{:children} appears twice in $G_1 \oplus G_2$ and $G_1 \cup G_2$, as well as, twice in $G_2 \oplus G_3$ and $G_2 \cup G_3$ ($\Delta(\mathcal{G},\texttt{:children})=4/4=1$), and so forth.
 \end{example}
 
 Given a query $Q$ with a set of predicates $\{ p_i, ..., p_n \}$, we may then consider a variety of aggregate functions over $\Delta(\mathcal{G},p_1), ..., \Delta(\mathcal{G},p_n)$, such as $\mathrm{max}$, $\mathrm{mean}$, etc., to compute a final numeric feature for the query, representing a summary of the level of dynamicity of the predicates it contains.
 
-\paragraph{Data Features (result dynamics):} The second data feature we capture indicates the past versions of the dynamic graph in which the query results $Q$ changed (what Knuth et al. call the ``clairvoyant model''~\cite{KnuthHS16}). \ah{How precisely is this represented?} While this feature offers rich information for prediction, given a query that has not previously been seen, it may be costly to compute, potentially requiring the execution of the query over each version, which in turn requires maintaining indexes over a variety of past versions.
+\paragraph{Data Features (result dynamics):} The second data feature we capture indicates how many times the query results $Q$ have changed over the past versions of the dynamic graph. While this feature offers rich information for prediction, given a query that has not previously been seen, it is costly to compute, since it requires the execution of the query over each past version within an interval, which in turn requires maintaining indexes over a variety of past versions.
 
 \section{Gold Standard Dataset}
 \label{sec:data}
 
-In order to evaluate the effectiveness of our proposal for predicting changes in SPARQL query results, we require a dynamic RDF graph, with access to various historical versions; preferably this graph contains real-world, large-scale, diverse data, and with sufficient changes between versions to provide both positive and negative examples of queries whose results change. Furthermore, we require a set of SPARQL queries that can be answered against this dynamic graph; preferably these queries again should be diverse, representative of real-world user queries, of a variety of shapes and sizes, using a variety of query operators, and with a mix of both dynamic and static results over the dynamic graph. In particular, we choose Wikidata~\cite{VrandecicK14} for our experiments, which, we shall argue, meets the aforementioned requirements. We first give details of the dynamic data we collect from Wikidata; thereafter, we discuss the queries we use in our experiments.
+In order to evaluate the effectiveness for predicting changes in SPARQL query results, we require a dynamic RDF graph, with access to various historical versions; preferably this graph contains real-world, large-scale, diverse data, and with sufficient changes between versions to provide both positive and negative examples of queries whose results change. Furthermore, we require a set of SPARQL queries that can be answered against this dynamic graph; preferably these queries again should be diverse, representative of real-world user queries, of a variety of shapes and sizes, using a variety of query operators, and with a mix of both dynamic and static results over the dynamic graph. In particular, we choose Wikidata~\cite{VrandecicK14} for our experiments, which, we shall argue, meets the aforementioned requirements. We first give details of the dynamic data we collect from Wikidata; thereafter, we discuss the queries we use in our experiments.
 
-\paragraph{RDF Data:} We use 23 Wikidata snapshots from 18/04/2017 to 27/09/2017, which are captured weekly in the \emph{truthy version} that contains triples (without qualifiers) that have the best non-deprecated rank for a given property. The first version has 1,102,242,331 triples and 3,276 unique predicates, while the final version has 1,924,967,162 triples (+74\%) and 3,660 unique predicates (+11\%). Figure~\ref{fig:wikidata}, on the left, shows the growth in triples as the weeks progress, while on the right, shows the numbers of triples added and removed week-to-week. We see that although many more triples are added than removed, there are some triples removed each week. We further note some peaks in triples added in some weeks, which may be due to bulk imports of data. The gap in week 12 is due to the fact that we were not able to obtain the data for that week (we thus exclude the triples added/removed from weeks 11 to 12, and 12 to 13). The dynamic graph thus considers a total of 32.3 billion triples across 23 versions.
-
-\ah{Regarding: ``The first version has 1,102,242,331 triples, 57,499,191 unique IRIs, 3,276 unique predicates, 933,588,860 literals, and 7,449 blank nodes, while the final version has 1,924,967,162 triples (+74\%), 80,637,164 unique IRIs (+40\%), 3,660 unique predicates (+11\%), 1,676,930,476 literals (+79\%) and 8,909 blank nodes (+19\%).'' I assume that the literals and blank nodes are not unique? Also the IRIs are unique per position? (In any case, such data is not 100\% needed; what's more important are the unique triples and unique predicates.)}
-
-\ah{Would it be possible to get a table of the top-10 most and least dynamic predicates by number of triples added/removed over the weeks, and also the number of triples with each such predicate in the first and last week?}
+\paragraph{RDF Data:} We use 23 Wikidata snapshots from 18/04/2017 to 27/09/2017, which are captured almost weekly($\pm$ 1 day) in the \emph{truthy version} that contains triples (without qualifiers) that have the best non-deprecated rank for a given property. The first version has 1,102,242,331 triples and 3,276 unique predicates, while the final version has 1,924,967,162 triples (+74\%) and 3,660 unique predicates (+11\%). Figure~\ref{fig:wikidata}, on the left, shows the growth in triples as the time progress, while on the right, shows the numbers of triples added and removed version-to-version. We see that although many more triples are added than removed, there are some triples removed each version. We further note some peaks in triples added in some versions, which may be due to bulk imports of data. Between version 11 and 12 we have almost 2 weeks because we were not able to obtain the data for that week, but this cause the third highest peak. The dynamic graph thus considers a total of 32.3 billion triples across 23 versions.
 
 \begin{figure}[t]
 	%\begin{minipage}[b]{0.47\linewidth}
@@ -720,9 +719,9 @@ In order to evaluate the effectiveness of our proposal for predicting changes in
 		width=5cm, 
 		height=5cm,
 		ymin=0,
-		xtick={1,2,...,24},
+		xtick={1,2,...,23},
 		xticklabels={},
-		extra x ticks={1,24},
+		extra x ticks={1,23},
 		legend pos=north west,
 		ymajorgrids=true,
 		grid style=dashed,
@@ -733,15 +732,7 @@ In order to evaluate the effectiveness of our proposal for predicting changes in
 		mark=diamond,
 		]
 		coordinates {
-			(1,1102242331)(2,1138975810)(3,1141303957)(4,1170283653)(5,1176093821)(6,1184177503)(7,1190456714)(8,1211813217)(9,1239145151)(10,1271353260)(11,1293099057)
-		};
-		
-		\addplot[
-		color=blue,
-		mark=diamond,
-		]
-		coordinates {
-			(13,1348622441)(14,1418460320)(15,1432143355)(16,1470298276)(17,1506140622)(18,1542278452)(19,1593334993)(20,1613832004)(21,1684774955)(22,1771601730)(23,1843086909)(24,1924967162)
+			(1,1102242331)(2,1138975810)(3,1141303957)(4,1170283653)(5,1176093821)(6,1184177503)(7,1190456714)(8,1211813217)(9,1239145151)(10,1271353260)(11,1293099057)(12,1348622441)(13,1418460320)(14,1432143355)(15,1470298276)(16,1506140622)(17,1542278452)(18,1593334993)(19,1613832004)(20,1684774955)(21,1771601730)(22,1843086909)(23,1924967162)
 		};
 		
 		%\legend{# entities}
@@ -778,82 +769,122 @@ In order to evaluate the effectiveness of our proposal for predicting changes in
 		grid style=dashed,
 		]
 		\addplot 
-		coordinates {(1,40137188)(2,4563382)(3,29302968)(4,8906402)(5,11455047)(6,11435682)(7,27229516)(8,26968577)(9,38952400)(10,20283316)(11,0)(12,0)(13,70073220)(14,17685830)(15,45405782)(16,41199256)(17,42633484)(18,56683899)(19,25309217)(20,25030143)(21,22548371)(22,23330356)(23,37009794)};
+		coordinates {(1,40137188)(2,4563382)(3,29302968)(4,8906402)(5,11455047)(6,11435682)(7,27229516)(8,26968577)(9,38952400)(10,20283316)(11,49001368)(12,70073220)(13,17685830)(14,45405782)(15,41199256)(16,42633484)(17,56683899)(18,25309217)(19,25030143)(20,22548371)(21,23330356)(22,37009794)};
 		\addplot 
-		coordinates {(1,3403743)(2,2235268)(3,1116111)(4,3096270)(5,3371448)(6,5156519)(7,5873153)(8,1336452)(9,6744349)(10,999601)(11,0)(12,0)(13,1123311)(14,4002828)(15,7250907)(16,5356971)(17,6495717)(18,5627376)(19,4812243)(20,790590)(21,681118)(22,1194899)(23,998105)};
+		coordinates {(1,3403743)(2,2235268)(3,1116111)(4,3096270)(5,3371448)(6,5156519)(7,5873153)(8,1336452)(9,6744349)(10,999601)(11,786939)(12,1123311)(13,4002828)(14,7250907)(15,5356971)(16,6495717)(17,5627376)(18,4812243)(19,790590)(20,681118)(21,1194899)(22,998105)};
 		\legend{Added, Removed}
 		\end{axis}
 		\end{tikzpicture}
 \caption{Evolution of total triples in Wikidata (left) and number of triples added to and removed from the $n$\textsuperscript{th} version for the $n+1$\textsuperscript{th} version (right) \label{fig:wikidata}}
 \end{figure}
 
-%\subsection{Queries Dataset}
-
-\paragraph{Queries:} In order to achieve a set of SPARQL queries that are answerable over Wikidata and with which we could run experiments, we took the user-contributed example queries from the Wikidata Query Service\footnote{https://www.wikidata.org/wiki/Wikidata:SPARQL\_query\_service/queries/examples}, consisting of 388 SPARQL 1.1 \texttt{SELECT} queries of varying degrees of complexity, touching upon various domains of data, and with a mix of varying query operators.\footnote{Very recently, a large log of millions of SPARQL queries have been released for Wikidata~\cite{MalyshevKGGB18}; these queries were not available when conducting our experiments, but would be interesting to analyze as part of future work.}
-
-Certain queries had to be removed from the original set of 388: some had syntax errors; others asked for information external to Wikidata (using \texttt{SERVICE}) or asked for qualifiers that are not present in the truthy version. We also eliminated a handful of queries that returned bindings to blank nodes to facilitate comparison between the results. Furthermore, we needed to transform certain queries for the purposes of our experiments. Some queries used features particular to the Wikidata Query Service, such as using a custom label \texttt{SERVICE} call to specify language preferences; we converted these queries to standard SPARQL using \texttt{COALESCE} to capture preferences. Furthermore, some queries featured non-deterministic elements -- such as \texttt{LIMIT}/\texttt{OFFSET} without ordering, \texttt{SAMPLE} or temporal functions -- such as \texttt{TODAY()} -- that may lead to changes in results not related to changes in the data; we remove queries with \texttt{SAMPLE} and temporal functions, and add an \texttt{ORDER BY} clause to all queries to ensure determinism with \texttt{LIMIT}/\texttt{OFFSET} and more generally to facilitate quick comparison of results. Figure~\ref{fig:transform} shows an example of a Wikidata query with the \texttt{LABEL} service rewritten and a deterministic ordering added. As a result of this process of filtering and transformation, we end up with a total of 221 deterministic queries.
+Although we have seen that the number of unique predicates did not change much over all versions, we are interested to see which predicates are indicative of dynamic statements. Table~\ref{tab:predicates} shows the ten most dynamic predicates according to the number of added and deleted statements involving that predicate (Total) and the ratio of added and deleted statements divided by the total number of statements for that predicate across all snapshots (Dyn); for the second, we only include predicates that appear in all snapshots and appear in $\geq$ 1,000 statements overall. Note that the largest number of changes involves the predicate scheme:description, however, its dynamic value is low due to the number of statements with it in the versions.  
 
 \begin{figure}[!t]
-\centering
-{
-	\begin{minipage}{0.8\textwidth}
-	\begin{lstlisting}[style=sparqld]
-#Cats
-SELECT ?item ?itemLabel
-WHERE {
- ?item wdt:P31 wd:Q146 .
- SERVICE wikibase:label { bd:serviceParam wikibase:language "en,es" }
-}
-	\end{lstlisting}
-	\end{minipage}	
-}
-
-{
-\begin{minipage}{0.8\textwidth}
-	\begin{lstlisting}[style=sparqld]
-#Cats
-SELECT ?item ?itemLabel
-WHERE {
-  ?item wdt:P31 wd:Q146 .
-  OPTIONAL { ?item rdfs:label ?en . FILTER(lang(?en)="en") }
-  OPTIONAL { ?item rdfs:label ?es . FILTER(lang(?es)="es") }
-  BIND(str(coalesce(?en, ?es, strafter(str(?item),
-    "http://www.wikidata.org/entity/"))) AS ?itemLabel )
-}
-ORDER BY ?item ?itemLabel
-	\end{lstlisting}
-\end{minipage}	
-}
-\caption{Query transformation before (above) and after (below) \label{fig:transform}}
+	\caption{Top-10 dynamic predicates according with total (left) and proportional (right) changes}
+	\label{tab:predicates}
+	\resizebox{0.45\textwidth}{!}{
+		\begin{tabular}{r@{\hskip 0.1in}lr@{\hskip 0.1in}r}    \toprule
+			\ntextnumero        & Predicate & Total	& Dyn 	\\  \midrule
+			1 & schema:description  & 464567354  	& 0.04   \\
+			2 & schema:dateModified  & 99330382  	& 0.14   \\
+			3 & schema:version  & 99330164  	& 0.14  \\
+			4 & schema:name  & 44487864  	& 0.01   \\
+			5 & rdfs:label  & 44487864  	& 0.01   \\
+			6 & skos:prefLabel  & 44487864  	& 0.01   \\
+			7 & wdt:P2093(author name)  & 30671685  	& 0.09   \\
+			8 & rdf:type  & 21808957  	& 0.02   \\
+			9 & wdt:P31(instance of)  & 12483471  	& 0.02   \\
+			10 & schema:about  & 10773295  	& 0.02  \\    \bottomrule
+		\end{tabular}	
+	}
+	\hfill
+	\resizebox{0.5\textwidth}{!}{
+		\begin{tabular}{r@{\hskip 0.1in}lr@{\hskip 0.1in}r}    \toprule
+			\ntextnumero        & Predicate & Total	& Dyn 	\\  \midrule
+			1 & owl:complementOf & 156862 & 0.99	\\
+			2 & owl:onProperty & 156862 & 0.99	\\
+			3 & owl:someValuesFrom & 86674 & 0.71	\\
+			4 & wdt:P2462(member of the deme) & 3563 & 0.62	\\
+			5 & wdt:P3383(film poster) & 4388 & 0.58	\\
+			6 & wdt:P2331(Cycling Archives ID) & 4229 & 0.33	\\
+			7 & wdt:P1112() & 4366 & 0.20	\\
+			8 & wdt:P505(general manager) & 4959 & 0.18	\\
+			9 & schema:dateModified & 99330382 & 0.14	\\
+			10 & schema:version & 99330164 & 0.14	\\    \bottomrule
+		\end{tabular}	
+	}	
 \end{figure}
 
-In Table~\ref{tab:Pattern}, we provide statistics on the distribution of different types of triple patterns in the 221 queries; of key importance is that 90.35\% of the triple patterns have a constant in the predicate position, meaning that they are compatible with a model based on the dynamics of predicates. We also see that 83 triple patterns (7.93\%) feature a path expression, where Table~\ref{tab:Path} provides the distribution of these expressions (remarking that multiple patterns can be used in one expression); of note here is that recursion is commonly found (74.70\% use $e\texttt{*}$ while 9.64\% use $e\texttt{+}$), and that we find no negated property paths.
+%\subsection{Queries Dataset}
+
+\paragraph{Queries:} In order to achieve a set of SPARQL queries that are answerable over Wikidata and with which we could run experiments, we took the user-contributed example queries from the Wikidata Query Service\footnote{https://www.wikidata.org/wiki/Wikidata:SPARQL\_query\_service/queries/examples}, consisting of 389 SPARQL 1.1 \texttt{SELECT} queries of varying degrees of complexity, touching upon various domains of data, and with a mix of varying query operators.\footnote{Very recently, a large log of millions of SPARQL queries have been released for Wikidata~\cite{MalyshevKGGB18}; these queries were not available when conducting our experiments, but would be interesting to analyze as part of future work.}
+
+A total of 96 queries had to be removed from the original set of 389 because they asked for information external to Wikidata (using \texttt{SERVICE}) or asked for qualifiers that are not present in the truthy version. We also eliminated 12 queries that returned bindings to blank nodes to facilitate comparison between the results. Furthermore, some queries featured non-deterministic elements -- such as \texttt{LIMIT}/\texttt{OFFSET} without ordering, \texttt{SAMPLE} or temporal functions -- such as \texttt{TODAY()} -- that may lead to changes in results not related to changes in the data; we remove 23 queries with \texttt{SAMPLE} and temporal functions, and add an \texttt{ORDER BY} clause to all queries to ensure determinism with \texttt{LIMIT}/\texttt{OFFSET} and more generally to facilitate quick comparison of results. We also eliminated 37 queries with 0 results forr all the snapshots. As a result of this process of filtering, we end up with a total of 221 deterministic queries.
+
+%Furthermore, we needed to transform certain queries for the purposes of our experiments. 163 queries used features particular to the Wikidata Query Service, such as using a custom label \texttt{SERVICE} call to specify language preferences; we converted these queries to standard SPARQL using \texttt{COALESCE} to capture preferences.  Figure~\ref{fig:transform} shows an example of a Wikidata query with the \texttt{LABEL} service rewritten and a deterministic ordering added. 
+%
+%\begin{figure}[!t]
+%\centering
+%{
+%	\begin{minipage}{0.8\textwidth}
+%	\begin{lstlisting}[style=sparqld]
+%#Cats
+%SELECT ?item ?itemLabel
+%WHERE {
+% ?item wdt:P31 wd:Q146 .
+% SERVICE wikibase:label { bd:serviceParam wikibase:language "en,es" }
+%}
+%	\end{lstlisting}
+%	\end{minipage}	
+%}
+%
+%{
+%\begin{minipage}{0.8\textwidth}
+%	\begin{lstlisting}[style=sparqld]
+%#Cats
+%SELECT ?item ?itemLabel
+%WHERE {
+%  ?item wdt:P31 wd:Q146 .
+%  OPTIONAL { ?item rdfs:label ?en . FILTER(lang(?en)="en") }
+%  OPTIONAL { ?item rdfs:label ?es . FILTER(lang(?es)="es") }
+%  BIND(str(coalesce(?en, ?es, strafter(str(?item),
+%    "http://www.wikidata.org/entity/"))) AS ?itemLabel )
+%}
+%ORDER BY ?item ?itemLabel
+%	\end{lstlisting}
+%\end{minipage}	
+%}
+%\caption{Query transformation before (above) and after (below) \label{fig:transform}}
+%\end{figure}
+
+In Table~\ref{tab:Pattern}, we provide statistics on the distribution of different types of triple patterns in the 221 queries before the transformation; of key importance is that 86.20\% of the triple patterns have a constant in the predicate position, meaning that they are compatible with a model based on the dynamics of predicates. We also see that 83 triple patterns (11.34\%) feature a path expression, where Table~\ref{tab:Path} provides the distribution of these expressions (remarking that multiple patterns can be used in one expression); of note here is that recursion is commonly found (74.70\% use $e\texttt{*}$ while 9.64\% use $e\texttt{+}$), and that we find no negated property paths.
 
 \begin{table}[t]
 	\begin{minipage}[b]{0.47\linewidth}
 		\centering
 		\caption{Distribution of triple patterns (C: Constant, V: Variable, P: Path). \label{tab:Pattern}}
-		\begin{tabular}{lrr}    \toprule
+		\begin{tabular}{l@{\hskip 0.2in}r@{\hskip 0.2in}r}    \toprule
 			\textbf{Pattern} & \textbf{\ntextnumero} & \textbf{\%} \\    \midrule
-			V C V   & 751      & 71.73\%    \\
-			V C C   & 189      & 18.05\%    \\
-			V V V   & 9        & 0.86\%     \\
-			C C V   & 6        & 0.57\%     \\
-			V V C   & 5        & 0.48\%     \\
-			C V V   & 3        & 0.29\%     \\
-			C V C   & 1        & 0.10\%      \\
-			C C C   & 0        & 0.00\%        \\    \midrule
-			V P C   & 69       & 6.59\%     \\
-			V P V   & 13       & 1.24\%     \\
-			C P V   & 1        & 0.10\%      \\
-			C P C   & 0        & 0.00\%        \\    \bottomrule
+			V C V   & 435      & 59.43\%    \\
+			V C C   & 190      & 25.96\%    \\
+			V V V   & 9        & 1.23\%     \\
+			C C V   & 6        & 0.82\%     \\
+			V V C   & 5        & 0.68\%     \\
+			C V V   & 3        & 0.41\%     \\
+			C V C   & 1        & 0.14\%     \\
+			C C C   & 0        & 0.00\%     \\    \midrule
+			V P C   & 69       & 9.43\%     \\
+			V P V   & 13       & 1.78\%     \\
+			C P V   & 1        & 0.14\%     \\
+			C P C   & 0        & 0.00\%     \\    \bottomrule
 		\end{tabular}
 	\end{minipage}
 	\hfill
 	\begin{minipage}[b]{0.47\linewidth}
 		\centering
 		\caption{Distribution of paths\label{tab:Path}}
-		\begin{tabular}{lrr}    \toprule
+		\begin{tabular}{l@{\hskip 0.2in}r@{\hskip 0.2in}r}    \toprule
 			\textbf{Pattern}      & \textbf{\ntextnumero} & \textbf{\%} \\    \midrule
 			$e\texttt{*}$   & 62       & 74.70\%     \\
 			$e_1 \texttt{/} e_2$  & 56       & 67.47\%    \\
@@ -868,7 +899,7 @@ In Table~\ref{tab:Pattern}, we provide statistics on the distribution of differe
 	\end{minipage}
 \end{table}
 
-Finally, we look at how the results for these queries change over the 23 weeks. Figure~\ref{graph:changeV} shows how many queries had some results change between two consecutive versions, where we see that approximately half of the queries see changes in their results each week. But are these always the same queries that change every week? Figure~\ref{graph:changeV} shows the number of weeks in which some result changed for each query; the queries are ordered by the number of changes in their results, where we can see that the results of 44 queries (19.90\%) change each time, 18 queries (8\%) never change, and more generally, we note a quite uniform distribution of queries in between. More generally speaking, we conclude that our query set has a good balance of queries whose results never change, queries whose results always change, and queries whose results sometimes change.
+Finally, we look at how the results for these queries change over the 23 versions. Figure~\ref{graph:changeV} shows how many queries had some results change between two consecutive versions, where we see that approximately half of the queries see changes in their results each version. But are these always the same queries that change every time? Figure~\ref{graph:changeV} shows the number of versions in which some result changed for each query; the queries are ordered by the number of changes in their results, where we can see that the results of 44 queries (19.90\%) change each time, 17 queries (7.69\%) never change, and more generally, we note a quite uniform distribution of queries in between. More generally speaking, we conclude that our query set has a good balance of queries whose results never change, queries whose results always change, and queries whose results sometimes change.
 
 \begin{figure}[t]
 	\begin{minipage}[b]{0.47\linewidth}
@@ -894,15 +925,7 @@ Finally, we look at how the results for these queries change over the 23 weeks. 
 		mark=diamond,
 		]
 		coordinates {
-			(1,115)(2,112)(3,118)(4,116)(5,121)(6,111)(7,127)(8,109)(9,118)(10,115)
-		};
-		
-		\addplot[
-		color=blue,
-		mark=diamond,
-		]
-		coordinates {
-			(12,105)(13,113)(14,118)(15,117)(16,111)(17,118)(18,112)(19,116)(20,106)(21,106)(22,129)
+			(1,115)(2,112)(3,118)(4,116)(5,121)(6,111)(7,127)(8,109)(9,118)(10,115)(11,129)(12,105)(13,113)(14,118)(15,117)(16,111)(17,118)(18,112)(19,116)(20,106)(21,106)(22,129)
 		};
 		
 		%\legend{# entities}
@@ -935,7 +958,7 @@ Finally, we look at how the results for these queries change over the 23 weeks. 
 		color=blue
 		]
 		coordinates {
-			(1,21)(2,21)(3,21)(4,21)(5,21)(6,21)(7,21)(8,21)(9,21)(10,21)(11,21)(12,21)(13,21)(14,21)(15,21)(16,21)(17,21)(18,21)(19,21)(20,21)(21,21)(22,21)(23,21)(24,21)(25,21)(26,21)(27,21)(28,21)(29,21)(30,21)(31,21)(32,21)(33,21)(34,21)(35,21)(36,21)(37,21)(38,21)(39,21)(40,21)(41,21)(42,21)(43,21)(44,21)(45,20)(46,20)(47,20)(48,20)(49,20)(50,20)(51,20)(52,19)(53,19)(54,19)(55,19)(56,19)(57,19)(58,19)(59,19)(60,18)(61,18)(62,18)(63,18)(64,18)(65,18)(66,18)(67,17)(68,17)(69,17)(70,17)(71,17)(72,17)(73,17)(74,16)(75,16)(76,16)(77,16)(78,16)(79,16)(80,15)(81,15)(82,15)(83,15)(84,14)(85,14)(86,14)(87,14)(88,14)(89,14)(90,14)(91,14)(92,14)(93,13)(94,13)(95,13)(96,13)(97,13)(98,13)(99,12)(100,12)(101,12)(102,12)(103,12)(104,12)(105,12)(106,12)(107,12)(108,12)(109,11)(110,11)(111,11)(112,11)(113,10)(114,10)(115,10)(116,10)(117,10)(118,9)(119,9)(120,9)(121,9)(122,9)(123,9)(124,9)(125,9)(126,8)(127,8)(128,8)(129,8)(130,8)(131,8)(132,8)(133,8)(134,8)(135,8)(136,7)(137,7)(138,7)(139,7)(140,7)(141,7)(142,7)(143,6)(144,6)(145,6)(146,6)(147,6)(148,6)(149,6)(150,6)(151,5)(152,5)(153,5)(154,4)(155,4)(156,4)(157,4)(158,4)(159,4)(160,4)(161,4)(162,4)(163,4)(164,4)(165,4)(166,3)(167,3)(168,3)(169,3)(170,3)(171,3)(172,2)(173,2)(174,2)(175,2)(176,2)(177,2)(178,2)(179,2)(180,2)(181,2)(182,2)(183,2)(184,2)(185,2)(186,2)(187,2)(188,1)(189,1)(190,1)(191,1)(192,1)(193,1)(194,1)(195,1)(196,1)(197,1)(198,1)(199,1)(200,1)(201,1)(202,1)(203,1)(204,0)(205,0)(206,0)(207,0)(208,0)(209,0)(210,0)(211,0)(212,0)(213,0)(214,0)(215,0)(216,0)(217,0)(218,0)(219,0)(220,0)(221,0)
+			(1,22)(2,22)(3,22)(4,22)(5,22)(6,22)(7,22)(8,22)(9,22)(10,22)(11,22)(12,22)(13,22)(14,22)(15,22)(16,22)(17,22)(18,22)(19,22)(20,22)(21,22)(22,22)(23,22)(24,22)(25,22)(26,22)(27,22)(28,22)(29,22)(30,22)(31,22)(32,22)(33,22)(34,22)(35,22)(36,22)(37,22)(38,22)(39,22)(40,22)(41,22)(42,22)(43,22)(44,22)(45,21)(46,21)(47,21)(48,21)(49,21)(50,21)(51,21)(52,20)(53,20)(54,20)(55,20)(56,20)(57,20)(58,20)(59,20)(60,19)(61,19)(62,19)(63,19)(64,19)(65,19)(66,18)(67,18)(68,18)(69,18)(70,18)(71,18)(72,18)(73,18)(74,17)(75,17)(76,17)(77,17)(78,16)(79,16)(80,16)(81,16)(82,16)(83,16)(84,15)(85,15)(86,15)(87,15)(88,15)(89,15)(90,15)(91,15)(92,14)(93,14)(94,14)(95,14)(96,13)(97,13)(98,13)(99,13)(100,13)(101,13)(102,13)(103,13)(104,12)(105,12)(106,12)(107,12)(108,12)(109,12)(110,11)(111,11)(112,11)(113,11)(114,11)(115,11)(116,11)(117,11)(118,10)(119,10)(120,10)(121,10)(122,10)(123,10)(124,10)(125,9)(126,9)(127,9)(128,9)(129,9)(130,9)(131,8)(132,8)(133,8)(134,8)(135,8)(136,7)(137,7)(138,7)(139,7)(140,7)(141,7)(142,7)(143,7)(144,6)(145,6)(146,6)(147,6)(148,6)(149,6)(150,6)(151,6)(152,5)(153,5)(154,5)(155,5)(156,5)(157,5)(158,4)(159,4)(160,4)(161,4)(162,4)(163,4)(164,4)(165,4)(166,4)(167,4)(168,4)(169,3)(170,3)(171,3)(172,3)(173,3)(174,3)(175,2)(176,2)(177,2)(178,2)(179,2)(180,2)(181,2)(182,2)(183,2)(184,2)(185,2)(186,2)(187,2)(188,2)(189,2)(190,1)(191,1)(192,1)(193,1)(194,1)(195,1)(196,1)(197,1)(198,1)(199,1)(200,1)(201,1)(202,1)(203,1)(204,1)(205,0)(206,0)(207,0)(208,0)(209,0)(210,0)(211,0)(212,0)(213,0)(214,0)(215,0)(216,0)(217,0)(218,0)(219,0)(220,0)(221,0)
 		};
 		
 		%\legend{# entities}
@@ -964,15 +987,13 @@ Finally, we look at how the results for these queries change over the 23 weeks. 
 %	\item Trigger a detection of the change as soon as the order of the statements differs between two snapshots.
 %\end{enumerate}
 
-Our experiments aim to ascertain the (relative) quality of predictions that can be made in the context of One Shot Change (OSC) and Time To Live (TTL) based on query features, statistics of predicate dynamics, as well as information about the historical evolution of queries.  \ah{Update with research questions later}
+Our experiments aim to ascertain the (relative) quality of predictions that can be made in the context of One Shot Change (OSC) and Time To Live (TTL) based on query features, statistics of predicate dynamics, as well as information about the historical evolution of queries.
 
-\paragraph{Setting:} Given that our tasks are prediction based, we must thus build a training set and a test set. With 23 versions, we must hold out at least one version for testing, leaving a maximum interval of 22 past versions to use for predictions. However, the more past versions we consider for a prediction, the fewer examples we can generate; for example, if we consider 22 versions for training, we will only have one ground truth label for each query. In the end, we opted to consider the 3 previous versions ($G_{i-3}, G_{i-2}, G_{i-1}$) to predict changes for the subsequent version ($G_i$); this allows us to predict from $G_4$ to $G_{23}$ inclusive, providing 20 examples per query and 4420 examples in total. We remark that no feature explicitly indicates which specific version numbers are given and which are to be predicted. (\ah{Discuss the gap: \textit{We evaluated the quality of our proposal by forming a set of classifiers to predict the change of 221 queries in 15 weeks, which is equivalent to 3315 objects to classify, described in terms of our proposed features.}}) \ah{Could we do experiments with different intervals?}
+\paragraph{Setting:} To build our final datasets, we must define a past interval to consider. With 23 versions, we must hold out at least one version to label, leaving a maximum interval of 22 past versions to use to compute our data features. However, the more past versions we consider for a prediction, the fewer examples we can generate; for example, if we consider 22 versions, we will only have one ground truth label for each query. In the end, we opted to consider intervals of 3, 5, 9 and 17 previous versions, for example, ($G_{i-3}, G_{i-2}, G_{i-1}$) to predict changes in queries results for the subsequent version ($G_i$); this allows us to predict from $G_4$ to $G_{23}$ inclusive, providing 20 examples per query, 4,420 examples in the largest dataset and 1,326 examples in the smallest dataset. No feature explicitly indicates which specific version numbers are given and which are to be predicted.
 
 In the case of predicate dynamics, as discussed in Section~\ref{sec:approach}, there are potentially many predicates per query, each with its own value for $\Delta(\mathcal{G},p)$, where to reduce (and fix) dimensionality, we may apply an aggregate function to choose the min, max or mean value over all predicates. In preliminary experiments, we found the mean value to offer the best results, followed by the max value; hence in what follows we adopt the mean value in our experiments.
 
-We tested the Pearson correlation ($\rho$) between the features available in our data. We found only one pair of highly correlated variables: \textbf{\textnumero\ of triple patterns} and \textbf{\textnumero\ of variables} ($\rho = 0.943$). \ah{Not sure about this part: what does it add? What does ``highly correlated mean?'' Also it's surprising that, e.g., \textbf{\textnumero of predicates} is not also highly correlated here.}
-
-For OSC prediction, we selected four classifiers for testing: Decision Trees, Linear SVM, Naive Bayes and Nearest Neighbors. We split the data to use 80\% for training and 20\% for tests. To avoid overfitting, we use cross-validation in the training data. We consider three types of features: static query features (\textsc{q}): predicate dynamics (\textsc{p}) and information on historical results (\texttt{r}). \ah{We should be more explicit on precisely what \textsc{r} is?} We may also consider combinations of these features: \textsc{qp}, \textsc{qs}, \textsc{pr} and \textsc{qpr}. In our experiments, we compare \textsc{qp} with \textsc{r}. \ah{Is this correct? Or would it be \textsc{qr}?} \ah{Why only 2? Could we not compare all seven?}
+For OSC prediction, we selected four classifiers for testing: Decision Trees, Linear SVM, Naive Bayes, and Nearest Neighbors. We split the data to use 80\% for training and 20\% for tests. To avoid overfitting, we use stratified cross-validation in the training data. We consider three types of features: static query features (\textsc{q}): predicate dynamics (\textsc{p}) considering information of $\Delta(\mathcal{G},p)$ and the cardinality of predicates and information on historical results (\textsc{r}) considering the number of past changes in the fixed interval. We may also consider combinations of these features: \textsc{qp}, \textsc{qr}, \textsc{pr} and \textsc{qpr}.
 
 
 %In the case of predicate dynamics, as discussed in Section~\ref{sec:approach}, there are potentially many predicates per query, each with its own value for $\Delta(\mathcal{G},p)$, where to reduce (and fix) dimensionality, we may apply an aggregate function to choose the min, max or mean value over all predicates. In preliminary experiments, we found the mean value to offer the best results, followed by the max value; hence in what follows we adopt the mean value in our experiments.
@@ -980,26 +1001,330 @@ For OSC prediction, we selected four classifiers for testing: Decision Trees, Li
 %Then we configure the parameters of our model. For the time interval, we consider three versions of the dataset equivalent to the last three weeks. As the Transformation Function, we evaluate three basic functions: Maximum, Minimum, and Average. For example, Maximum will take the dynamics of the most dynamic property (used as a predicate in the query) as a feature.
 %In addition, given that existing approaches are based on the historical results of the queries, we evaluate the substitution of our model for a historical change indicator that counts how many times the results have changed in the last three weeks.
 
-In addition, we train a Machine Learning model to determine the TTL of a query's results. To train the model we consider the changes observed in the monitored interval. For each update of the results of a query, we have created an example of training with the previously presented features. The target TTL value that we learn is the time interval during which the results of the query remain fresh from the current update time. \ah{This paragraph is a little vague/unclear to me.}
+In addition, we train a Machine Learning model to determine the TTL of a query's results. To train the model we consider the changes observed in the monitored interval. For each update of the results of a query, we have created a training example with the previously presented features. The target TTL value that we learn is the time interval during which the results of the query remain fresh from the previous update time. As an example, suppose that the query $Q$ change three times ($G_{3}, G_{7}, G_{9}$) over all versions; we consider two examples from $G_{3}$ and $G_{7}$ with target TTL value 4 and 2 respectively.
 
-\paragraph{Results:} Table~\ref{tab:classifier} shows the $F_1$-measure for the predictions made; for reference, we include a baseline that randomly guesses yes/no. With the highest result being an $F_1$-measure of 0.706, the results show that predicting changes in query results is indeed a challenging problem; on the other hand, all configurations clearly outperform the random baseline. Looking in further detail, as can be expected, prediction performs best when the \textsc{r} feature -- with knowledge of changes in the historical value of results of the input query -- is available. However, the \textsc{qp} features -- which do not assume the availability of such information -- are often competitive: more specifically, the best result for \textsc{r} is 0.706 with Linear SVM, while the best results for \textsc{qp} is 0.651 with Decision Trees. 
+\paragraph{Results:} Table~\ref{tab:classifier} shows the $F_1$-score for the predictions made considering the union of different combinations of the sets of features (Q, P, R) and varying the window sizes (3, 5, 9, 17); for reference, we include a baseline that randomly guesses yes/no. 
+We can note the best results were obtained using the features from \textsc{r} reaching values of 0.83 $F_1$. The results show that predicting changes in query results is indeed a challenging problem. Looking in further detail, as can be expected, prediction performs best when the \textsc{r} feature -- with knowledge of changes in the historical value of results of the input query -- is available. The features from sets \textsc{q} and  \textsc{p} -- which do not assume the availability of such information -- obtain a lower $F_1$-score: more specifically, the best result was using \textsc{pr} (0.83) with Linear SVM and window size 17, while the best results without \textsc{r} was using \textsc{Q} (0.60) with Linear SVM and window size 5.
 
-Finally, to predict the TTL of the results of the query -- outputting the number of versions for which the query results can be expected to remain the same -- we employed techniques of multiple linear regression using the \textsc{sklearn} and \textsc{tensorflow} libraries. The latter allows us to see how the periods of estimation and the convergence analysis will behave. We were able to predict the TTL (in relation to the number of invariant weeks) with an average square error of 0.43 and a variance score of 0.01. These results allow to predict future changes in query results with good accuracy using linear regression techniques. \ah{Could do with a comparison here; the 0.43 result is quite abstract.}
+Furthermore, we show in Figure~\ref{fig:result} that the size of the window influences the quality of the results when considering \textsc{r} (blue), being better as the window increases. However, these results are not affected when we consider only predicates in \textsc{q} (brown), \textsc{p} (green)  or \textsc{qp} (black). Also, we show, that all configurations outperform the random baseline (red).
 
-
+% Please add the following required packages to your document preamble:
+% \usepackage[normalem]{ulem}
+% \useunder{\uline}{\ul}{}
 \begin{table*}[t]
 	\centering
-	\caption{$F_1$-measure for tested classifiers on OSC}
+	\caption{$F_1$-score for tested classifiers considering different sets of features (Q, P, R) and window sizes (3,5,9,17)}
 	\label{tab:classifier}
-	\begin{tabular}{lrr}    \toprule	
-		\textbf{Classifier}                   & \textsc{r} & \textsc{qp} \\    \midrule
-		\textit{Random Baseline}				 & 0.497869 & 0.486923 \\\midrule
-		Decision Trees                & 0.695591 & \underline{0.651462} \\
-		Linear SVM                   & \underline{0.705755} & 0.593846 \\
-		Naive Bayes                  & 0.661239 & 0.587692 \\ 
-		Nearest Neighbors            & 0.701587 & 0.635923 \\   \bottomrule
+	\begin{tabular}{l@{\hskip 0.1in}l@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r}    \toprule		  
+		& \textbf{Classifier}        & \textsc{Q}         & \textsc{P}         & \textsc{R}         & \textsc{QP}        & \textsc{QR}        & \textsc{PR}        & \textsc{QPR}       \\    \midrule
+	w=3 	& \textit{Random Baseline} & 0.499          & 0.489          & 0.502          & 0.489          & 0.495          & 0.495          & 0.516          \\
+		& Decision Trees           & 0.497          & \underline{0.519}    & \underline{0.781}    & 0.497          & 0.569          & 0.706          & 0.6            \\
+		& Naive Bayes              & 0.432          & 0.419          & 0.758          & 0.432          & 0.478          & 0.759          & 0.479          \\
+		& Nearest Neighbors        & 0.505          & 0.517          & 0.776          & 0.509          & 0.679          & \underline{0.781}    & 0.68           \\
+		& Linear SVM               & \underline{0.596}    & 0.372          & 0.758          & \underline{0.593}    & \underline{0.775}    & 0.762          & \underline{0.774}    \\    \midrule
+		& \textbf{Better}          & \textbf{0.596} & \textbf{0.519} & \textbf{0.781} & \textbf{0.593} & \textbf{0.775} & \textbf{0.781} & \textbf{0.774} \\    \midrule
+	w=5	& \textit{Random Baseline} & 0.48           & 0.496          & 0.499          & 0.505          & 0.495          & 0.497          & 0.499          \\
+		& Decision Trees           & 0.485          & 0.514          & 0.782          & 0.494          & 0.581          & 0.711          & 0.603          \\
+		& Naive Bayes              & 0.431          & 0.486          & 0.782          & 0.432          & 0.508          & \underline{0.797}    & 0.5            \\
+		& Nearest Neighbors        & 0.517          & \underline{0.535}    & \underline{0.795}    & 0.525          & 0.676          & 0.79           & 0.673          \\
+		& Linear SVM               & \underline{0.6}      & 0.384          & 0.784          & \underline{0.59}     & \underline{0.787}    & 0.789          & \underline{0.787}    \\    \midrule
+		& \textbf{Better}          & \textbf{0.6}   & \textbf{0.535} & \textbf{0.795} & \textbf{0.59}  & \textbf{0.787} & \textbf{0.797} & \textbf{0.787} \\    \midrule
+	w=9	& \textit{Random Baseline} & 0.497          & 0.505          & 0.493          & 0.483          & 0.497          & 0.511          & 0.515          \\
+		& Decision Trees           & 0.456          & 0.517          & 0.793          & 0.48           & 0.668          & 0.735          & 0.651          \\
+		& Naive Bayes              & 0.434          & 0.461          & \underline{0.797}    & 0.435          & 0.531          & 0.79           & 0.531          \\
+		& Nearest Neighbors        & 0.514          & \underline{0.528}    & 0.787          & 0.517          & 0.653          & \underline{0.8}      & 0.648          \\
+		& Linear SVM   				& \underline{0.578}    & 0.397          & \underline{0.797}    & \underline{0.571}    & \underline{0.795}    & \underline{0.8}      & \underline{0.796}    \\     \midrule
+		& \textbf{Better}          & \textbf{0.578} & \textbf{0.528} & \textbf{0.797} & \textbf{0.571} & \textbf{0.795} & \textbf{0.8}   & \textbf{0.796} \\    \midrule
+	w=17	& \textit{Random Baseline} & 0.486          & 0.494          & 0.482          & 0.512          & 0.524          & 0.511          & 0.49           \\
+		& Decision Trees           & 0.511          & \underline{0.511}    & \underline{0.827}    & 0.469          & 0.712          & 0.712          & 0.71           \\
+		& Naive Bayes              & 0.416          & 0.465          & 0.826          & 0.414          & 0.555          & 0.81           & 0.554          \\
+		& Nearest Neighbors        & 0.548          & 0.48           & 0.826          & 0.554          & 0.744          & 0.82           & 0.731          \\
+		& Linear SVM               & \underline{0.554}    & 0.438          & 0.826          & \underline{0.56}     & \underline{0.819}    & \underline{0.831}    & \underline{0.815}    \\    \midrule
+		& \textbf{Better}          & \textbf{0.554} & \textbf{0.511} & \textbf{0.827} & \textbf{0.56}  & \textbf{0.819} & \textbf{0.831} & \textbf{0.815}	\\    \bottomrule
 	\end{tabular}
 \end{table*}
+
+\begin{figure}[t]
+	%\begin{minipage}[b]{0.30\linewidth}
+	\centering
+	\begin{tikzpicture}[thick,font=\scriptsize,scale=0.95]
+	\begin{axis}[
+	%title={Temperature dependence of CuSO$_4\cdot$5H$_2$O solubility},
+	xlabel={F1},
+	width=5cm, 
+	height=4cm,
+	ymin=0,
+	xtick={3,5,9,17},
+	xticklabels={},
+	extra x ticks={3,5,9,17},
+	legend pos=north west,
+	ymajorgrids=true,
+	grid style=dashed,
+	]
+	
+	\addplot[
+	color=red,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.516)(5,0.505)(9,0.515)(17,0.524)
+	};
+	
+	\addplot[
+	color=brown,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.596)(5,0.6)(9,0.578)(17,0.554)
+	};
+	
+	\addplot[
+	color=green,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.519)(5,0.535)(9,0.528)(17,0.511)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.781)(5,0.795)(9,0.797)(17,0.827)
+	};
+	
+	\addplot[
+	color=black,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.593)(5,0.59)(9,0.571)(17,0.56)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.775)(5,0.787)(9,0.795)(17,0.819)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.781)(5,0.797)(9,0.8)(17,0.831)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.774)(5,0.787)(9,0.796)(17,0.815)
+	};
+	
+	%\legend{# entities}
+	%\legend{# predicates}
+	%\legend{# literals}
+	%\legend{# blank nodes}
+	
+	\end{axis}
+	\end{tikzpicture}
+	%		\caption{Evolution of the number of triples on Wikidata.}
+	%		\label{graph:datasize}
+	%	\end{minipage}
+	\hspace{0.1cm}
+	%	\begin{minipage}[b]{0.30\linewidth}
+	%		\centering
+	\begin{tikzpicture}[thick,font=\scriptsize,scale=0.95]
+	\begin{axis}[
+	%title={Temperature dependence of CuSO$_4\cdot$5H$_2$O solubility},
+	xlabel={Precision},
+	width=5cm, 
+	height=4cm,
+	ymin=0,
+	xtick={3,5,9,17},
+	xticklabels={},
+	extra x ticks={3,5,9,17},
+	legend pos=north west,
+	ymajorgrids=true,
+	grid style=dashed,
+	]
+	
+	\addplot[
+	color=red,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.516)(5,0.505)(9,0.515)(17,0.524)
+	};
+	
+	\addplot[
+	color=brown,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.598)(5,0.601)(9,0.601)(17,0.619)
+	};
+	
+	\addplot[
+	color=green,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.52)(5,0.535)(9,0.528)(17,0.512)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.796)(5,0.798)(9,0.798)(17,0.828)
+	};
+	
+	\addplot[
+	color=black,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.596)(5,0.591)(9,0.589)(17,0.579)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.775)(5,0.787)(9,0.795)(17,0.819)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.782)(5,0.797)(9,0.8)(17,0.831)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.774)(5,0.787)(9,0.796)(17,0.815)
+	};
+	
+	%\legend{# entities}
+	%\legend{# predicates}
+	%\legend{# literals}
+	%\legend{# blank nodes}
+	
+	\end{axis}
+	\end{tikzpicture}
+	%		\caption{Evolution of the number of triples on Wikidata.}
+	%		\label{graph:datasize}
+	%	\end{minipage}
+	\hspace{0.1cm}
+	%	\begin{minipage}[b]{0.30\linewidth}
+	%		\centering
+	\begin{tikzpicture}[thick,font=\scriptsize,scale=0.95]
+	\begin{axis}[
+	%title={Temperature dependence of CuSO$_4\cdot$5H$_2$O solubility},
+	xlabel={Recall},
+	width=5cm, 
+	height=4cm,
+	ymin=0,
+	xtick={3,5,9,17},
+	xticklabels={},
+	extra x ticks={3,5,9,17},
+	legend pos=north west,
+	ymajorgrids=true,
+	grid style=dashed,
+	]
+	
+	\addplot[
+	color=red,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.516)(5,0.505)(9,0.515)(17,0.524)
+	};
+	
+	\addplot[
+	color=brown,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.598)(5,0.601)(9,0.579)(17,0.554)
+	};
+	
+	\addplot[
+	color=green,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.52)(5,0.535)(9,0.528)(17,0.512)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.787)(5,0.794)(9,0.798)(17,0.828)
+	};
+	
+	\addplot[
+	color=black,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.595)(5,0.591)(9,0.572)(17,0.561)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.775)(5,0.787)(9,0.796)(17,0.819)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.783)(5,0.797)(9,0.8)(17,0.831)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(3,0.774)(5,0.788)(9,0.796)(17,0.815)
+	};
+	
+	%\legend{# entities}
+	%\legend{# predicates}
+	%\legend{# literals}
+	%\legend{# blank nodes}
+	
+	\end{axis}
+	\end{tikzpicture}
+	\caption{Best results for each feature sets in term of $F_1$-measure (left), Precision score (center) and Recall (right) with different windows sizes 
+		\label{fig:result}}
+\end{figure}
+
+Finally, to predict the TTL of the results of the query -- outputting the number of versions for which the query results can be expected to remain the same -- we employed techniques of multiple linear regression using the \textsc{sklearn} library. The latter allow us to see how the periods of estimation and the convergence analysis will behave. We were able to predict the TTL (in relation to the number of invariant weeks) with an average square error of 0.43 weeks and a variance score of 0.01. These results allow us to predict future changes in query results with good accuracy using linear regression techniques.
+
+
+
 \begin{comment}
 
 \begin{figure}
@@ -1023,16 +1348,13 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
 
-In this paper we propose methods to predict whether or not (OSC) and/or when (TTL) the results of an input query will change in the future. More specifically, we propose a framework based on classifiers and regression that accept features extracted from the query, from past versions of the data, and/or from the combination of both. Considering this framework, we propose that there is a conceptual trade-off between the cost of computing features and their value for prediction: features extracted from queries alone are the most efficient to extract, not requiring historical data, but are quite coarse-grained for prediction; on the other hand, features based on changes in results in previous versions for an (unseen) input query are often the most costly to acquire, but offer fine-grained information for prediction; finally, features based on the dynamics of predicates used in the data offer a balance between the two, allowing to summarize historical data into succinct statistics, while offering more fine-grained information than static query features and less fine-grained information than historical results.
+In this paper we evaluate methods to predict whether or not (OSC) and/or when (TTL) the results of an input query will change in the future. More specifically, we evaluate a framework based on classifiers and regression that accept features extracted from the query, from past versions of the data, and/or from the combination of both. Considering this framework, we show that there is a conceptual trade-off between the cost of computing features and their value for prediction: features extracted from queries alone are the most efficient to extract, not requiring historical data, but are quite coarse-grained for prediction; on the other hand, features based on changes in results in previous versions for an (unseen) input query are often the most costly to acquire, but offer fine-grained information for prediction; finally, features based on the dynamics of predicates used in the data offer a balance between the two, allowing to summarize historical data into succinct statistics, while offering more fine-grained information than static query features and less fine-grained information than historical results.
 
-Our goal then was to explore this trade-off experimentally. For this, we define some desirable characteristics for the queries and data used in the experimental setting, such as availability, size, dynamics, diversity, etc. Settling on Wikidata, we collect 23 versions and curate 221 user-generated queries from which we compute results, statistics and ultimately features that form the gold standard for the tasks. Analysing these data and queries, we conclude that they meet the desired characteristics, offering a large-scale, diverse, real-world setting; more importantly, we find that our queries offer an ideal distribution of queries whose results always change, queries whose results never change, and (more importantly) queries whose results change intermittently and for which prediction is thus a non-trivial task. We make this gold standard available at \ah{...} -- including queries, results and features -- so that the results presented here can be reproduced and so that it can be reused in further research.
+We thus explore this trade-off experimentally. For this, we define some desirable characteristics for the queries and data used in the experimental setting, such as availability, size, dynamics, diversity, etc. Settling on Wikidata, we collect 23 versions and curate 221 user-generated queries from which we compute results, statistics and ultimately features that form the gold standard for the tasks. Analysing these data and queries, we conclude that they meet the desired characteristics, offering a large-scale, diverse, real-world setting; more importantly, we find that our queries offer an ideal distribution of queries whose results always change, queries whose results never change, and (more importantly) queries whose results change intermittently and for which prediction is thus a non-trivial task. We will make this gold standard available after double-blind review -- including queries, results, and features -- so that the results presented here can be reproduced and so that it can be reused in further research.
 
-Finally, we use this gold standard dataset to evaluate the trade-off identified between different types of features for predictions in the OSC and TTL tasks. For OSC, we evaluate the success rates of a variety of classifiers based on the $F_1$-measure of the predictions. Our results show that although features based on historical changes to query results perform best ($F_1 = 0.706$), considering static query features and predicate dynamics alone is competitive ($F_1 =0.651$) when historical results are not available or are prohibitively costly to compute.    
+Finally, we use this gold standard dataset to evaluate the trade-off identified between different types of features for predictions in the OSC and TTL tasks. For OSC, we evaluate the success rates of a variety of classifiers based on the $F_1$-measure of the predictions. Our results show that the features based on historical changes to query results perform best ($F_1 = 0.83$), considering static query features and predicate dynamics alone is less competitive ($F_1 =0.60$) when historical results are not available or are prohibitively costly to compute.    
 
-In terms of future work, gold standards based on datasets other than Wikidata could be pursued. Also, our gold standard based on Wikidata could be extended to consider more versions spanning a longer period of time and/or more queries; as previously mentioned, a very large query dataset for Wikidata was recently published~\cite{MalyshevKGGB18} from which it should be possible to extend the Wikidata gold standard (the challenge being to keep a balance of static and dynamic queries with diverse features). Concerning the prediction tasks themselves, there are a variety of other features and approaches that could be applied; one promising direction may be, for example, to apply a more fine-grained analysis of the query, considering for example estimates of the selectivity of particular triples patterns, and combining this information with statistics on the dynamics of the data and the query operators used; our current gold standard could be used to validate such developments. Finally, it would be interesting to investigate the effectiveness of these techniques in practice, developing caching systems, synchronization schedules, and other applications, based on the proposed predictions.
-
-\ah{Some reference can be shortened to just expand the acronym, no more, for example; \textit{Advances in Information Retrieval -- 34th European Conference on IR Research, ECIR, 2012}; can become \textit{European Conference on IR Research, ECIR, 2012}. Addresses and dates are not necessary (keep the year of course). The workshop name is enough; no need to also give the conference. Keeping the publisher for conference is good, but maybe IEEE Computer Society can become IEEE.}
-
+In terms of future work, gold standards based on datasets other than Wikidata could be pursued. Also, our gold standard based on Wikidata could be extended to consider more versions spanning a longer period of time and/or more queries; as previously mentioned, a very large query dataset for Wikidata was recently published~\cite{MalyshevKGGB18} from which it should be possible to extend the Wikidata gold standard (the challenge being to keep a balance of static and dynamic queries with diverse features). Concerning the prediction tasks themselves, there are a variety of other features and approaches that could be applied; one promising direction may be, for example, to apply a more fine-grained analysis of the query, considering for example estimates of the selectivity of particular triples patterns, and combining this information with statistics on the dynamics of the data and the query operators used; our current gold standard could be used to validate such developments. Finally, it would be interesting to investigate the effectiveness of these techniques in practice, developing caching systems, synchronization schedules, and other applications, based on the evaluated predictions.
 
 \bibliographystyle{splncs04}
 \bibliography{ref}
