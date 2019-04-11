@@ -39,7 +39,7 @@
 \hypersetup{
     colorlinks, linkcolor={dark-red},
     citecolor={dark-green}, urlcolor={dark-blue},
-    pdftitle={Estimating the dynamics of SPARQL query results over Wikidata},    % title
+    pdftitle={Estimating the dynamics of SPARQL query results},    % title
     pdfauthor={Alberto Moya, Aidan Hogan},     % author
     pdfsubject={KGSWC 2019},   % subject of the document
     pdfkeywords={SPARQL;} {Linked Data;} {Dynamics;} {Wikidata;}, % list of keywords
@@ -142,7 +142,7 @@
 
 \begin{document}
 %
-\title{Estimating the dynamics of\\SPARQL query results over Wikidata\thanks{This work was supported by CONICYT PFCHA, Doctorado Becas Chile/2017 -- 72180000, the Millennium Institute for Foundational Research on Data (IMFD) and FONDECYT Grant No. 1181896.}}
+\title{Estimating the dynamics of SPARQL query results\thanks{This work was supported by CONICYT PFCHA, Doctorado Becas Chile/2017 -- 72180000, the Millennium Institute for Foundational Research on Data (IMFD) and FONDECYT Grant No. 1181896.}}
 %
 %\titlerunning{Abbreviated paper title}
 % If the paper title is too long for the running head, you can set
@@ -982,7 +982,7 @@ Our experiments aim to ascertain the (relative) quality of predictions that can 
 
 \paragraph{Setting:} To build our final datasets, given that our data features are temporal based, we must thus define a past interval to consider. With 23 versions, we must hold out at least one version to label, leaving a maximum interval of 22 past versions to use for compute our data features. However, the more past versions we consider for a prediction, the fewer examples we can generate; for example, if we consider 22 versions for compute, we will only have one ground truth label for each query. In the end, we opted to consider intervals of 3, 5, 9 and 17 previous versions, for example, ($G_{i-3}, G_{i-2}, G_{i-1}$) to predict changes in queries results for the subsequent version ($G_i$); this allows us to predict from $G_4$ to $G_{23}$ inclusive, providing 20 examples per query and 4420 examples in the largest dataset and 1326 examples in the smallest dataset. We remark that no feature explicitly indicates which specific version numbers are given and which are to be predicted.
 
-In the case of predicate dynamics, as discussed in Section~\ref{sec:approach}, there are potentially many predicates per query, each with its own value for $\Delta(\mathcal{G},p)$, where to reduce (and fix) dimensionality, we may apply an aggregate function to choose the min, max or mean value over all predicates.  \ah{In preliminary experiments, we found the mean value to offer the best results, followed by the max value; hence in what follows we adopt the mean value in our experiments.}
+In the case of predicate dynamics, as discussed in Section~\ref{sec:approach}, there are potentially many predicates per query, each with its own value for $\Delta(\mathcal{G},p)$, where to reduce (and fix) dimensionality, we may apply an aggregate function to choose the min, max or mean value over all predicates. In preliminary experiments, we found the mean value to offer the best results, followed by the max value; hence in what follows we adopt the mean value in our experiments.
 
 For OSC prediction, we selected four classifiers for testing: Decision Trees, Linear SVM, Naive Bayes and Nearest Neighbors. We split the data to use 80\% for training and 20\% for tests. To avoid overfitting, we use stratified cross-validation in the training data. We consider three types of features: static query features (\textsc{q}): predicate dynamics (\textsc{p}) considering information of $\Delta(\mathcal{G},p)$ and the cardinality of predicates and information on historical results (\texttt{r}) considering both, the number of past changes in the fixed interval and the cardinalities of those changes divided by the sizes of query results. We may also consider combinations of these features: \textsc{qp}, \textsc{qr}, \textsc{pr} and \textsc{qpr}.
 
@@ -1001,32 +1001,284 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 \begin{table*}[t]
 	\begin{tabular}{lrrrrrrr}    \toprule
 		\textbf{Classifier}        & \textsc{Q}         & \textsc{P}         & \textsc{R}         & \textsc{QP}        & \textsc{QR}        & \textsc{PR}        & \textsc{QPR}       \\    \midrule
-		\textit{Random Baseline}   & 0.5002262 & 0.5126697 & 0.5027149 & 0.511086  & 0.5031674 & 0.5063348 & 0.4979638 \\
-		Decision Trees    & 0.4708145 & 0.5233032 & 0.7821267 & 0.4857466 & 0.5671946 & 0.6803167 & 0.6047511 \\
-		Naive Bayes       & 0.5169683 & 0.4647059 & 0.7638009 & 0.5242081 & 0.5420814 & 0.7588235 & 0.5337104 \\
-		Nearest Neighbors & 0.4846154 & 0.5106335 & 0.7819005 & 0.5056561 & 0.6776018 & 0.7760181 & 0.6832579 \\
-		Linear SVM        & 0.5914027 & 0.5108597 & 0.7638009 & 0.5914027 & 0.7751131 & 0.7647059 & 0.7746606 \\    \midrule
-		\textbf{Better}            & 0.5914027 & 0.5233032 & 0.7821267 & 0.5914027 & 0.7751131 & 0.7760181 & 0.7746606 \\    \bottomrule
-		\textit{Random Baseline}   & 0.5010055 & 0.5005028 & 0.4959779 & 0.4987431 & 0.4974862 & 0.4856712 & 0.4816491 \\
-		Decision Trees    & 0.4497235 & 0.5294118 & 0.782554  & 0.4954751 & 0.5723982 & 0.688537  & 0.6289593 \\
-		Naive Bayes       & 0.5160885 & 0.4705882 & 0.7946204 & 0.5160885 & 0.5510307 & 0.7787833 & 0.5334339 \\
-		Nearest Neighbors & 0.5125691 & 0.5296631 & 0.7868276 & 0.5115636 & 0.6792358 & 0.7875817 & 0.6726998 \\
-		Linear SVM        & 0.5957768 & 0.5075415 & 0.7946204 & 0.5849673 & 0.7895928 & 0.7885872 & 0.7880845 \\    \midrule
-		\textbf{Better}            & 0.5957768 & 0.5296631 & 0.7946204 & 0.5849673 & 0.7895928 & 0.7885872 & 0.7880845 \\    \bottomrule
-		\textit{Random Baseline}   & 0.4961215 & 0.5087266 & 0.5054945 & 0.487395  & 0.512605  & 0.4938591 & 0.5090498 \\
-		Decision Trees    & 0.448287  & 0.54234   & 0.7918552 & 0.4974144 & 0.6263736 & 0.7117001 & 0.6764706 \\
-		Naive Bayes       & 0.5258565 & 0.4605688 & 0.7983193 & 0.5235941 & 0.5688429 & 0.7685844 & 0.5585003 \\
-		Nearest Neighbors & 0.5206852 & 0.5336134 & 0.789916  & 0.5310278 & 0.6706529 & 0.7886231 & 0.6780866 \\
-		Linear SVM        & 0.5727214 & 0.5       & 0.7983193 & 0.5688429 & 0.7957337 & 0.7950873 & 0.7947641 \\    \midrule
-		\textbf{Better}          & 0.5727214 & 0.54234   & 0.7983193 & 0.5688429 & 0.7957337 & 0.7950873 & 0.7947641 \\    \bottomrule
-		\textit{Random Baseline}   & 0.4766214 & 0.4962293 & 0.5067873 & 0.5030166 & 0.4788839 & 0.484917  & 0.5030166 \\
-		Decision Trees    & 0.4969834 & 0.4819005 & 0.8205128 & 0.5346908 & 0.7292609 & 0.7503771 & 0.7277526 \\
-		Naive Bayes       & 0.5090498 & 0.4834087 & 0.8280543 & 0.5037707 & 0.5791855 & 0.7978884 & 0.5874811 \\
-		Nearest Neighbors & 0.5580694 & 0.4871795 & 0.8288084 & 0.5671192 & 0.739819  & 0.8220211 & 0.7239819 \\
-		Linear SVM        & 0.5656109 & 0.5098039 & 0.8288084 & 0.5791855 & 0.8273002 & 0.8288084 & 0.8295626 \\    \midrule
-		\textbf{Better}            & 0.5656109 & 0.5098039 & 0.8288084 & 0.5791855 & 0.8273002 & 0.8288084 & 0.8295626 \\     \bottomrule
+		\textit{Random Baseline}   & 0.490  & 0.486 & 0.500   & 0.502 & 0.486 & 0.495 & 0.491 \\
+		Decision Trees    & 0.471 & 0.513 & \underline{0.782} & 0.497 & 0.572 & 0.705 & 0.605 \\
+		Naive Bayes       & 0.514 & \underline{0.523} & 0.764 & 0.514 & 0.540 & 0.763 & 0.540  \\
+		Nearest Neighbors & 0.505 & 0.521 & 0.778 & 0.509 & 0.679 & \underline{0.781} & 0.680  \\
+		Linear SVM        & \underline{0.596} & 0.518 & 0.764 & \underline{0.593} & \underline{0.775} & 0.767 & \underline{0.774} \\    \midrule
+		\textbf{Better}   & 0.596 & 0.523 & 0.782 & 0.593 & 0.775 & 0.781 & 0.774 \\    \bottomrule
+		\textit{Random Baseline}   & 0.487 & 0.497 & 0.500 & 0.512 & 0.502 & 0.515 & 0.501 \\
+		Decision Trees    & 0.482 & 0.515 & 0.782 & 0.494 & 0.580  & 0.714 & 0.606 \\
+		Naive Bayes       & 0.514 & 0.514 & 0.782 & 0.513 & 0.561 & \underline{0.797} & 0.554 \\
+		Nearest Neighbors & 0.509 & \underline{0.535} & \underline{0.797} & 0.525 & 0.676 & 0.791 & 0.674 \\
+		Linear SVM        & \underline{0.600} & 0.516 & 0.785 & \underline{0.590} & \underline{0.788} & 0.790  & \underline{0.788} \\    \midrule
+		\textbf{Better}   & 0.600 & 0.535 & 0.797 & 0.590 & 0.788 & 0.797 & 0.788 \\    \bottomrule
+		\textit{Random Baseline}   & 0.507 & 0.498 & 0.487 & 0.506 & 0.486 & 0.497 & 0.495 \\
+		Decision Trees    & 0.469 & 0.514 & 0.794 & 0.457 & 0.656 & 0.731 & 0.642 \\
+		Naive Bayes       & 0.517 & 0.519 & \underline{0.797} & 0.516 & 0.577 & 0.791 & 0.576 \\
+		Nearest Neighbors & 0.514 & \underline{0.529} & 0.787 & 0.518 & 0.654 & \underline{0.800} & 0.65  \\
+		Linear SVM        & \underline{0.578} & 0.512 & \underline{0.797} & \underline{0.571} & \underline{0.796} & \underline{0.800} & \underline{0.796} \\    \midrule
+		\textbf{Better}   & 0.578 & 0.529 & 0.797 & 0.571 & 0.796 & 0.800 & 0.796 \\    \bottomrule
+		\textit{Random Baseline}   & 0.514 & 0.515 & 0.502 & 0.493 & 0.499 & 0.499 & 0.502 \\
+		Decision Trees    & 0.512 & 0.517 & \underline{0.827} & 0.493 & 0.725 & 0.716 & 0.704 \\
+		Naive Bayes       & 0.515 & \underline{0.519} & \underline{0.827} & 0.508 & 0.599 & 0.810  & 0.594 \\
+		Nearest Neighbors & 0.549 & 0.481 & \underline{0.827} & 0.555 & 0.744 & 0.821 & 0.732 \\
+		Linear SVM        & \underline{0.554} & \underline{0.519} & \underline{0.827} & \underline{0.560} & \underline{0.819} & \underline{0.831} & \underline{0.815} \\    \midrule
+		\textbf{Better}   & 0.554 & 0.519 & 0.827 & 0.560 & 0.819 & 0.831 & 0.815 \\    \bottomrule
 	\end{tabular}
 \end{table*}
+
+\begin{figure}[t]
+	%\begin{minipage}[b]{0.30\linewidth}
+	\centering
+	\begin{tikzpicture}[thick,font=\scriptsize]
+	\begin{axis}[
+	%title={Temperature dependence of CuSO$_4\cdot$5H$_2$O solubility},
+	xlabel={F1},
+	width=5cm, 
+	height=5cm,
+	ymin=0,
+	xtick={1,2,...,4},
+	xticklabels={},
+	extra x ticks={1,23},
+	legend pos=north west,
+	ymajorgrids=true,
+	grid style=dashed,
+	]
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.596)(2,0.600)(3,0.578)(4,0.554)
+	};
+
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.523)(2,0.535)(3,0.529)(4,0.519)
+	};
+
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.782)(2,0.797)(3,0.797)(4,0.827)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.593)(2,0.590)(3,0.571)(4,0.560)
+	};
+
+		\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.775)(2,0.788)(3,0.796)(4,0.819)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.781)(2,0.797)(3,0.800)(4,0.831)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.774)(2,0.788)(3,0.796)(4,0.815)
+	};
+	
+	%\legend{# entities}
+	%\legend{# predicates}
+	%\legend{# literals}
+	%\legend{# blank nodes}
+	
+	\end{axis}
+	\end{tikzpicture}
+	%		\caption{Evolution of the number of triples on Wikidata.}
+	%		\label{graph:datasize}
+	%	\end{minipage}
+	\hspace{0.1cm}
+	%	\begin{minipage}[b]{0.30\linewidth}
+	%		\centering
+	\begin{tikzpicture}[thick,font=\scriptsize]
+	\begin{axis}[
+	%title={Temperature dependence of CuSO$_4\cdot$5H$_2$O solubility},
+	xlabel={Precision},
+	width=5cm, 
+	height=5cm,
+	ymin=0,
+	xtick={1,2,...,23},
+	xticklabels={},
+	extra x ticks={1,23},
+	legend pos=north west,
+	ymajorgrids=true,
+	grid style=dashed,
+	]
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.49)(2,0.600)(3,0.578)(4,0.554)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.486)(2,0.535)(3,0.529)(4,0.519)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.5)(2,0.797)(3,0.797)(4,0.827)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.502)(2,0.590)(3,0.571)(4,0.560)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.486)(2,0.788)(3,0.796)(4,0.819)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.495)(2,0.797)(3,0.800)(4,0.831)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.491)(2,0.788)(3,0.796)(4,0.815)
+	};
+	
+	%\legend{# entities}
+	%\legend{# predicates}
+	%\legend{# literals}
+	%\legend{# blank nodes}
+	
+	\end{axis}
+	\end{tikzpicture}
+	%		\caption{Evolution of the number of triples on Wikidata.}
+	%		\label{graph:datasize}
+	%	\end{minipage}
+	\hspace{0.1cm}
+	%	\begin{minipage}[b]{0.30\linewidth}
+	%		\centering
+	\begin{tikzpicture}[thick,font=\scriptsize]
+	\begin{axis}[
+	%title={Temperature dependence of CuSO$_4\cdot$5H$_2$O solubility},
+	xlabel={Recall},
+	width=5cm, 
+	height=5cm,
+	ymin=0,
+	xtick={1,2,...,23},
+	xticklabels={},
+	extra x ticks={1,23},
+	legend pos=north west,
+	ymajorgrids=true,
+	grid style=dashed,
+	]
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.596)(2,0.600)(3,0.578)(4,0.554)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.523)(2,0.535)(3,0.529)(4,0.519)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.782)(2,0.797)(3,0.797)(4,0.827)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.593)(2,0.590)(3,0.571)(4,0.560)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.775)(2,0.788)(3,0.796)(4,0.819)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.781)(2,0.797)(3,0.800)(4,0.831)
+	};
+	
+	\addplot[
+	color=blue,
+	mark=diamond,
+	]
+	coordinates {
+		(1,0.774)(2,0.788)(3,0.796)(4,0.815)
+	};
+	
+	%\legend{# entities}
+	%\legend{# predicates}
+	%\legend{# literals}
+	%\legend{# blank nodes}
+	
+	\end{axis}
+	\end{tikzpicture}
+	\caption{Evolution of total triples in Wikidata (left) and number of triples added to and removed from the $n$\textsuperscript{th} version for the $n+1$\textsuperscript{th} version (right) \label{fig:result}}
+\end{figure}
 
 \begin{comment}
 
