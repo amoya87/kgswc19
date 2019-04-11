@@ -998,33 +998,36 @@ In addition, we train a Machine Learning model to determine the TTL of a query's
 
 Finally, to predict the TTL of the results of the query -- outputting the number of versions for which the query results can be expected to remain the same -- we employed techniques of multiple linear regression using the \textsc{sklearn} and \textsc{tensorflow} libraries. The latter allows us to see how the periods of estimation and the convergence analysis will behave. We were able to predict the TTL (in relation to the number of invariant weeks) with an average square error of 0.43 and a variance score of 0.01. These results allow to predict future changes in query results with good accuracy using linear regression techniques. \ah{Could do with a comparison here; the 0.43 result is quite abstract.}
 
+% Please add the following required packages to your document preamble:
+% \usepackage[normalem]{ulem}
+% \useunder{\uline}{\ul}{}
 \begin{table*}[t]
 	\begin{tabular}{lrrrrrrr}    \toprule
 		\textbf{Classifier}        & \textsc{Q}         & \textsc{P}         & \textsc{R}         & \textsc{QP}        & \textsc{QR}        & \textsc{PR}        & \textsc{QPR}       \\    \midrule
-		\textit{Random Baseline}   & 0.490  & 0.486 & 0.500   & 0.502 & 0.486 & 0.495 & 0.491 \\
-		Decision Trees    & 0.471 & 0.513 & \underline{0.782} & 0.497 & 0.572 & 0.705 & 0.605 \\
-		Naive Bayes       & 0.514 & \underline{0.523} & 0.764 & 0.514 & 0.540 & 0.763 & 0.540  \\
-		Nearest Neighbors & 0.505 & 0.521 & 0.778 & 0.509 & 0.679 & \underline{0.781} & 0.680  \\
-		Linear SVM        & \underline{0.596} & 0.518 & 0.764 & \underline{0.593} & \underline{0.775} & 0.767 & \underline{0.774} \\    \midrule
-		\textbf{Better}   & 0.596 & 0.523 & 0.782 & 0.593 & 0.775 & 0.781 & 0.774 \\    \bottomrule
-		\textit{Random Baseline}   & 0.487 & 0.497 & 0.500 & 0.512 & 0.502 & 0.515 & 0.501 \\
-		Decision Trees    & 0.482 & 0.515 & 0.782 & 0.494 & 0.580  & 0.714 & 0.606 \\
-		Naive Bayes       & 0.514 & 0.514 & 0.782 & 0.513 & 0.561 & \underline{0.797} & 0.554 \\
-		Nearest Neighbors & 0.509 & \underline{0.535} & \underline{0.797} & 0.525 & 0.676 & 0.791 & 0.674 \\
-		Linear SVM        & \underline{0.600} & 0.516 & 0.785 & \underline{0.590} & \underline{0.788} & 0.790  & \underline{0.788} \\    \midrule
-		\textbf{Better}   & 0.600 & 0.535 & 0.797 & 0.590 & 0.788 & 0.797 & 0.788 \\    \bottomrule
-		\textit{Random Baseline}   & 0.507 & 0.498 & 0.487 & 0.506 & 0.486 & 0.497 & 0.495 \\
-		Decision Trees    & 0.469 & 0.514 & 0.794 & 0.457 & 0.656 & 0.731 & 0.642 \\
-		Naive Bayes       & 0.517 & 0.519 & \underline{0.797} & 0.516 & 0.577 & 0.791 & 0.576 \\
-		Nearest Neighbors & 0.514 & \underline{0.529} & 0.787 & 0.518 & 0.654 & \underline{0.800} & 0.65  \\
-		Linear SVM        & \underline{0.578} & 0.512 & \underline{0.797} & \underline{0.571} & \underline{0.796} & \underline{0.800} & \underline{0.796} \\    \midrule
-		\textbf{Better}   & 0.578 & 0.529 & 0.797 & 0.571 & 0.796 & 0.800 & 0.796 \\    \bottomrule
-		\textit{Random Baseline}   & 0.514 & 0.515 & 0.502 & 0.493 & 0.499 & 0.499 & 0.502 \\
-		Decision Trees    & 0.512 & 0.517 & \underline{0.827} & 0.493 & 0.725 & 0.716 & 0.704 \\
-		Naive Bayes       & 0.515 & \underline{0.519} & \underline{0.827} & 0.508 & 0.599 & 0.810  & 0.594 \\
-		Nearest Neighbors & 0.549 & 0.481 & \underline{0.827} & 0.555 & 0.744 & 0.821 & 0.732 \\
-		Linear SVM        & \underline{0.554} & \underline{0.519} & \underline{0.827} & \underline{0.560} & \underline{0.819} & \underline{0.831} & \underline{0.815} \\    \midrule
-		\textbf{Better}   & 0.554 & 0.519 & 0.827 & 0.560 & 0.819 & 0.831 & 0.815 \\    \bottomrule
+		\textit{Random Baseline} & 0.499          & 0.489          & 0.502          & 0.489          & 0.495          & 0.495          & 0.516          \\
+		Decision Trees           & 0.497          & \underline{0.519}    & \underline{0.781}    & 0.497          & 0.569          & 0.706          & 0.6            \\
+		Naive Bayes              & 0.432          & 0.419          & 0.758          & 0.432          & 0.478          & 0.759          & 0.479          \\
+		Nearest Neighbors        & 0.505          & 0.517          & 0.776          & 0.509          & 0.679          & \underline{0.781}    & 0.68           \\
+		Linear SVM               & \underline{0.596}    & 0.372          & 0.758          & \underline{0.593}    & \underline{0.775}    & 0.762          & \underline{0.774}    \\    \midrule
+		\textbf{Better}          & \textbf{0.596} & \textbf{0.519} & \textbf{0.781} & \textbf{0.593} & \textbf{0.775} & \textbf{0.781} & \textbf{0.774} \\    \bottomrule
+		\textit{Random Baseline} & 0.48           & 0.496          & 0.499          & 0.505          & 0.495          & 0.497          & 0.499          \\
+		Decision Trees           & 0.485          & 0.514          & 0.782          & 0.494          & 0.581          & 0.711          & 0.603          \\
+		Naive Bayes              & 0.431          & 0.486          & 0.782          & 0.432          & 0.508          & \underline{0.797}    & 0.5            \\
+		Nearest Neighbors        & 0.517          & \underline{0.535}    & \underline{0.795}    & 0.525          & 0.676          & 0.79           & 0.673          \\
+		Linear SVM               & \underline{0.6}      & 0.384          & 0.784          & \underline{0.59}     & \underline{0.787}    & 0.789          & \underline{0.787}    \\    \midrule
+		\textbf{Better}          & \textbf{0.6}   & \textbf{0.535} & \textbf{0.795} & \textbf{0.59}  & \textbf{0.787} & \textbf{0.797} & \textbf{0.787} \\    \bottomrule
+		\textit{Random Baseline} & 0.497          & 0.505          & 0.493          & 0.483          & 0.497          & 0.511          & 0.515          \\
+		Decision Trees           & 0.456          & 0.517          & 0.793          & 0.48           & 0.668          & 0.735          & 0.651          \\
+		Naive Bayes              & 0.434          & 0.461          & \underline{0.797}    & 0.435          & 0.531          & 0.79           & 0.531          \\
+		Nearest Neighbors        & 0.514          & \underline{0.528}    & 0.787          & 0.517          & 0.653          & \underline{0.8}      & 0.648          \\
+		Linear SVM               & \underline{0.578}    & 0.397          & \underline{0.797}    & \underline{0.571}    & \underline{0.795}    & \underline{0.8}      & \underline{0.796}    \\    \midrule
+		\textbf{Better}          & \textbf{0.578} & \textbf{0.528} & \textbf{0.797} & \textbf{0.571} & \textbf{0.795} & \textbf{0.8}   & \textbf{0.796} \\    \bottomrule
+		\textit{Random Baseline} & 0.486          & 0.494          & 0.482          & 0.512          & 0.524          & 0.511          & 0.49           \\
+		Decision Trees           & 0.511          & \underline{0.511}    & \underline{0.827}    & 0.469          & 0.712          & 0.712          & 0.71           \\
+		Naive Bayes              & 0.416          & 0.465          & 0.826          & 0.414          & 0.555          & 0.81           & 0.554          \\
+		Nearest Neighbors        & 0.548          & 0.48           & 0.826          & 0.554          & 0.744          & 0.82           & 0.731          \\
+		Linear SVM               & \underline{0.554}    & 0.438          & 0.826          & \underline{0.56}     & \underline{0.819}    & \underline{0.831}    & \underline{0.815}    \\    \midrule
+		\textbf{Better}          & \textbf{0.554} & \textbf{0.511} & \textbf{0.827} & \textbf{0.56}  & \textbf{0.819} & \textbf{0.831} & \textbf{0.815}	\\    \bottomrule
 	\end{tabular}
 \end{table*}
 
@@ -1051,7 +1054,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.596)(2,0.600)(3,0.578)(4,0.554)
+		(1,0.596)(2,0.6)(3,0.578)(4,0.554)
 	};
 
 	\addplot[
@@ -1059,7 +1062,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.523)(2,0.535)(3,0.529)(4,0.519)
+		(1,0.519)(2,0.535)(3,0.528)(4,0.511)
 	};
 
 	\addplot[
@@ -1067,7 +1070,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.782)(2,0.797)(3,0.797)(4,0.827)
+		(1,0.781)(2,0.795)(3,0.797)(4,0.827)
 	};
 	
 	\addplot[
@@ -1075,7 +1078,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.593)(2,0.590)(3,0.571)(4,0.560)
+		(1,0.593)(2,0.59)(3,0.571)(4,0.56)
 	};
 
 		\addplot[
@@ -1083,7 +1086,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.775)(2,0.788)(3,0.796)(4,0.819)
+		(1,0.775)(2,0.787)(3,0.795)(4,0.819)
 	};
 	
 	\addplot[
@@ -1091,7 +1094,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.781)(2,0.797)(3,0.800)(4,0.831)
+		(1,0.781)(2,0.797)(3,0.8)(4,0.831)
 	};
 	
 	\addplot[
@@ -1099,7 +1102,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.774)(2,0.788)(3,0.796)(4,0.815)
+		(1,0.774)(2,0.787)(3,0.796)(4,0.815)
 	};
 	
 	%\legend{# entities}
@@ -1135,7 +1138,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.49)(2,0.600)(3,0.578)(4,0.554)
+		(1,0.598)(2,0.601)(3,0.601)(4,0.619)
 	};
 	
 	\addplot[
@@ -1143,7 +1146,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.486)(2,0.535)(3,0.529)(4,0.519)
+		(1,0.52)(2,0.535)(3,0.528)(4,0.512)
 	};
 	
 	\addplot[
@@ -1151,7 +1154,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.5)(2,0.797)(3,0.797)(4,0.827)
+		(1,0.796)(2,0.798)(3,0.798)(4,0.828)
 	};
 	
 	\addplot[
@@ -1159,7 +1162,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.502)(2,0.590)(3,0.571)(4,0.560)
+		(1,0.596)(2,0.591)(3,0.589)(4,0.579)
 	};
 	
 	\addplot[
@@ -1167,7 +1170,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.486)(2,0.788)(3,0.796)(4,0.819)
+		(1,0.775)(2,0.787)(3,0.795)(4,0.819)
 	};
 	
 	\addplot[
@@ -1175,7 +1178,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.495)(2,0.797)(3,0.800)(4,0.831)
+		(1,0.782)(2,0.797)(3,0.8)(4,0.831)
 	};
 	
 	\addplot[
@@ -1183,7 +1186,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.491)(2,0.788)(3,0.796)(4,0.815)
+		(1,0.774)(2,0.787)(3,0.796)(4,0.815)
 	};
 	
 	%\legend{# entities}
@@ -1219,7 +1222,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.596)(2,0.600)(3,0.578)(4,0.554)
+		(1,0.598)(2,0.601)(3,0.579)(4,0.554)
 	};
 	
 	\addplot[
@@ -1227,7 +1230,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.523)(2,0.535)(3,0.529)(4,0.519)
+		(1,0.52)(2,0.535)(3,0.528)(4,0.512)
 	};
 	
 	\addplot[
@@ -1235,7 +1238,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.782)(2,0.797)(3,0.797)(4,0.827)
+		(1,0.787)(2,0.794)(3,0.798)(4,0.828)
 	};
 	
 	\addplot[
@@ -1243,7 +1246,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.593)(2,0.590)(3,0.571)(4,0.560)
+		(1,0.595)(2,0.591)(3,0.572)(4,0.561)
 	};
 	
 	\addplot[
@@ -1251,7 +1254,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.775)(2,0.788)(3,0.796)(4,0.819)
+		(1,0.775)(2,0.787)(3,0.796)(4,0.819)
 	};
 	
 	\addplot[
@@ -1259,7 +1262,7 @@ Finally, to predict the TTL of the results of the query -- outputting the number
 	mark=diamond,
 	]
 	coordinates {
-		(1,0.781)(2,0.797)(3,0.800)(4,0.831)
+		(1,0.783)(2,0.797)(3,0.8)(4,0.831)
 	};
 	
 	\addplot[
