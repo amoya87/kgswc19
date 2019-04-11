@@ -777,7 +777,7 @@ Although we have seen that the number of unique predicates did not change much o
 	\caption{Top-10 dynamic predicates according with total (left) and proportional (right) changes}
 	\label{tab:predicates}
 	\resizebox{0.45\textwidth}{!}{
-		\begin{tabular}{rlrr}    \toprule
+		\begin{tabular}{r@{\hskip 0.1in}lr@{\hskip 0.1in}r}    \toprule
 			\ntextnumero        & Predicate & Total	& Dyn 	\\  \midrule
 			1 & schema:description  & 464567354  	& 0.04   \\
 			2 & schema:dateModified  & 99330382  	& 0.14   \\
@@ -793,7 +793,7 @@ Although we have seen that the number of unique predicates did not change much o
 	}
 	\hfill
 	\resizebox{0.5\textwidth}{!}{
-		\begin{tabular}{rlrr}    \toprule
+		\begin{tabular}{r@{\hskip 0.1in}lr@{\hskip 0.1in}r}    \toprule
 			\ntextnumero        & Predicate & Total	& Dyn 	\\  \midrule
 			1 & owl:complementOf & 156862 & 0.99	\\
 			2 & owl:onProperty & 156862 & 0.99	\\
@@ -857,7 +857,7 @@ In Table~\ref{tab:Pattern}, we provide statistics on the distribution of differe
 	\begin{minipage}[b]{0.47\linewidth}
 		\centering
 		\caption{Distribution of triple patterns (C: Constant, V: Variable, P: Path). \label{tab:Pattern}}
-		\begin{tabular}{lrr}    \toprule
+		\begin{tabular}{l@{\hskip 0.2in}r@{\hskip 0.2in}r}    \toprule
 			\textbf{Pattern} & \textbf{\ntextnumero} & \textbf{\%} \\    \midrule
 			V C V   & 435      & 59.43\%    \\
 			V C C   & 190      & 25.96\%    \\
@@ -877,7 +877,7 @@ In Table~\ref{tab:Pattern}, we provide statistics on the distribution of differe
 	\begin{minipage}[b]{0.47\linewidth}
 		\centering
 		\caption{Distribution of paths\label{tab:Path}}
-		\begin{tabular}{lrr}    \toprule
+		\begin{tabular}{l@{\hskip 0.2in}r@{\hskip 0.2in}r}    \toprule
 			\textbf{Pattern}      & \textbf{\ntextnumero} & \textbf{\%} \\    \midrule
 			$e\texttt{*}$   & 62       & 74.70\%     \\
 			$e_1 \texttt{/} e_2$  & 56       & 67.47\%    \\
@@ -999,7 +999,7 @@ In addition, we train a Machine Learning model to determine the TTL of a query's
 \paragraph{Results:} Table~\ref{tab:classifier} shows the $F_1$-score for the predictions made considering the union of different combinations of the sets of features (Q, P, R) and varying the window sizes (3, 5, 9, 17); for reference, we include a baseline that randomly guesses yes/no. 
 We can note the best results were obtained using the features from \textsc{r} reaching values ​​of 0.83 of $F_1$. The results show that predicting changes in query results is indeed a challenging problem. Looking in further detail, as can be expected, prediction performs best when the \textsc{r} feature - with knowledge of changes in the historical value of results of the input query - is available. And, the features from sets \textsc{q} and  \textsc{p} - which do not assume the availability of such information - obtain less $F_1$-score: more specifically, the best result was using \textsc{pr} (0.83) with Linear SVM and window size 17, while the best results without \textsc{r} was using \textsc{Q} (0.60) with Linear SVM and window size 5.
 
-Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the window influences the quality of the results when considering \textsc{r}, being better as the window increases. However, these results are not affected when we consider only predicates in \textsc{q} or  \textsc{p}. Also, we show, that all configurations outperform the random baseline.
+Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the window influences the quality of the results when considering \textsc{r} (blue), being better as the window increases. However, these results are not affected when we consider only predicates in \textsc{q} (brown), \textsc{p} (green)  or \textsc{qp} (black). Also, we show, that all configurations outperform the random baseline (red).
 
 % Please add the following required packages to your document preamble:
 % \usepackage[normalem]{ulem}
