@@ -1005,34 +1005,35 @@ Furthermore, we show in Figure~\ref{fig:result} that effectively the size of the
 % \usepackage[normalem]{ulem}
 % \useunder{\uline}{\ul}{}
 \begin{table*}[t]
-	\caption{$F_1$-measure for tested classifiers considering different sets of features (Q, P, R) and varying the the window sizes (2,5,9,17)}
+	\centering
+	\caption{$F_1$-measure for tested classifiers considering different sets of features (Q, P, R) and varying the the window sizes (3,5,9,17)}
 	\label{tab:classifier}
-	\begin{tabular}{lrrrrrrr}    \toprule
-		\textbf{Classifier}        & \textsc{Q}         & \textsc{P}         & \textsc{R}         & \textsc{QP}        & \textsc{QR}        & \textsc{PR}        & \textsc{QPR}       \\    \midrule
-		\textit{Random Baseline} & 0.499          & 0.489          & 0.502          & 0.489          & 0.495          & 0.495          & 0.516          \\
-		Decision Trees           & 0.497          & \underline{0.519}    & \underline{0.781}    & 0.497          & 0.569          & 0.706          & 0.6            \\
-		Naive Bayes              & 0.432          & 0.419          & 0.758          & 0.432          & 0.478          & 0.759          & 0.479          \\
-		Nearest Neighbors        & 0.505          & 0.517          & 0.776          & 0.509          & 0.679          & \underline{0.781}    & 0.68           \\
-		Linear SVM               & \underline{0.596}    & 0.372          & 0.758          & \underline{0.593}    & \underline{0.775}    & 0.762          & \underline{0.774}    \\    \midrule
-		\textbf{Better}          & \textbf{0.596} & \textbf{0.519} & \textbf{0.781} & \textbf{0.593} & \textbf{0.775} & \textbf{0.781} & \textbf{0.774} \\    \bottomrule
-		\textit{Random Baseline} & 0.48           & 0.496          & 0.499          & 0.505          & 0.495          & 0.497          & 0.499          \\
-		Decision Trees           & 0.485          & 0.514          & 0.782          & 0.494          & 0.581          & 0.711          & 0.603          \\
-		Naive Bayes              & 0.431          & 0.486          & 0.782          & 0.432          & 0.508          & \underline{0.797}    & 0.5            \\
-		Nearest Neighbors        & 0.517          & \underline{0.535}    & \underline{0.795}    & 0.525          & 0.676          & 0.79           & 0.673          \\
-		Linear SVM               & \underline{0.6}      & 0.384          & 0.784          & \underline{0.59}     & \underline{0.787}    & 0.789          & \underline{0.787}    \\    \midrule
-		\textbf{Better}          & \textbf{0.6}   & \textbf{0.535} & \textbf{0.795} & \textbf{0.59}  & \textbf{0.787} & \textbf{0.797} & \textbf{0.787} \\    \bottomrule
-		\textit{Random Baseline} & 0.497          & 0.505          & 0.493          & 0.483          & 0.497          & 0.511          & 0.515          \\
-		Decision Trees           & 0.456          & 0.517          & 0.793          & 0.48           & 0.668          & 0.735          & 0.651          \\
-		Naive Bayes              & 0.434          & 0.461          & \underline{0.797}    & 0.435          & 0.531          & 0.79           & 0.531          \\
-		Nearest Neighbors        & 0.514          & \underline{0.528}    & 0.787          & 0.517          & 0.653          & \underline{0.8}      & 0.648          \\
-		Linear SVM               & \underline{0.578}    & 0.397          & \underline{0.797}    & \underline{0.571}    & \underline{0.795}    & \underline{0.8}      & \underline{0.796}    \\    \midrule
-		\textbf{Better}          & \textbf{0.578} & \textbf{0.528} & \textbf{0.797} & \textbf{0.571} & \textbf{0.795} & \textbf{0.8}   & \textbf{0.796} \\    \bottomrule
-		\textit{Random Baseline} & 0.486          & 0.494          & 0.482          & 0.512          & 0.524          & 0.511          & 0.49           \\
-		Decision Trees           & 0.511          & \underline{0.511}    & \underline{0.827}    & 0.469          & 0.712          & 0.712          & 0.71           \\
-		Naive Bayes              & 0.416          & 0.465          & 0.826          & 0.414          & 0.555          & 0.81           & 0.554          \\
-		Nearest Neighbors        & 0.548          & 0.48           & 0.826          & 0.554          & 0.744          & 0.82           & 0.731          \\
-		Linear SVM               & \underline{0.554}    & 0.438          & 0.826          & \underline{0.56}     & \underline{0.819}    & \underline{0.831}    & \underline{0.815}    \\    \midrule
-		\textbf{Better}          & \textbf{0.554} & \textbf{0.511} & \textbf{0.827} & \textbf{0.56}  & \textbf{0.819} & \textbf{0.831} & \textbf{0.815}	\\    \bottomrule
+	\begin{tabular}{l@{\hskip 0.1in}l@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r@{\hskip 0.1in}r}    \toprule		  
+		& \textbf{Classifier}        & \textsc{Q}         & \textsc{P}         & \textsc{R}         & \textsc{QP}        & \textsc{QR}        & \textsc{PR}        & \textsc{QPR}       \\    \midrule
+	w=3 	& \textit{Random Baseline} & 0.499          & 0.489          & 0.502          & 0.489          & 0.495          & 0.495          & 0.516          \\
+		& Decision Trees           & 0.497          & \underline{0.519}    & \underline{0.781}    & 0.497          & 0.569          & 0.706          & 0.6            \\
+		& Naive Bayes              & 0.432          & 0.419          & 0.758          & 0.432          & 0.478          & 0.759          & 0.479          \\
+		& Nearest Neighbors        & 0.505          & 0.517          & 0.776          & 0.509          & 0.679          & \underline{0.781}    & 0.68           \\
+		& Linear SVM               & \underline{0.596}    & 0.372          & 0.758          & \underline{0.593}    & \underline{0.775}    & 0.762          & \underline{0.774}    \\    \midrule
+		& \textbf{Better}          & \textbf{0.596} & \textbf{0.519} & \textbf{0.781} & \textbf{0.593} & \textbf{0.775} & \textbf{0.781} & \textbf{0.774} \\    \bottomrule
+	w=5	& \textit{Random Baseline} & 0.48           & 0.496          & 0.499          & 0.505          & 0.495          & 0.497          & 0.499          \\
+		& Decision Trees           & 0.485          & 0.514          & 0.782          & 0.494          & 0.581          & 0.711          & 0.603          \\
+		& Naive Bayes              & 0.431          & 0.486          & 0.782          & 0.432          & 0.508          & \underline{0.797}    & 0.5            \\
+		& Nearest Neighbors        & 0.517          & \underline{0.535}    & \underline{0.795}    & 0.525          & 0.676          & 0.79           & 0.673          \\
+		& Linear SVM               & \underline{0.6}      & 0.384          & 0.784          & \underline{0.59}     & \underline{0.787}    & 0.789          & \underline{0.787}    \\    \midrule
+		& \textbf{Better}          & \textbf{0.6}   & \textbf{0.535} & \textbf{0.795} & \textbf{0.59}  & \textbf{0.787} & \textbf{0.797} & \textbf{0.787} \\    \bottomrule
+	w=9	& \textit{Random Baseline} & 0.497          & 0.505          & 0.493          & 0.483          & 0.497          & 0.511          & 0.515          \\
+		& Decision Trees           & 0.456          & 0.517          & 0.793          & 0.48           & 0.668          & 0.735          & 0.651          \\
+		& Naive Bayes              & 0.434          & 0.461          & \underline{0.797}    & 0.435          & 0.531          & 0.79           & 0.531          \\
+		& Nearest Neighbors        & 0.514          & \underline{0.528}    & 0.787          & 0.517          & 0.653          & \underline{0.8}      & 0.648          \\
+		& Linear SVM   				& \underline{0.578}    & 0.397          & \underline{0.797}    & \underline{0.571}    & \underline{0.795}    & \underline{0.8}      & \underline{0.796}    \\     \midrule
+		& \textbf{Better}          & \textbf{0.578} & \textbf{0.528} & \textbf{0.797} & \textbf{0.571} & \textbf{0.795} & \textbf{0.8}   & \textbf{0.796} \\    \bottomrule
+	w=17	& \textit{Random Baseline} & 0.486          & 0.494          & 0.482          & 0.512          & 0.524          & 0.511          & 0.49           \\
+		& Decision Trees           & 0.511          & \underline{0.511}    & \underline{0.827}    & 0.469          & 0.712          & 0.712          & 0.71           \\
+		& Naive Bayes              & 0.416          & 0.465          & 0.826          & 0.414          & 0.555          & 0.81           & 0.554          \\
+		& Nearest Neighbors        & 0.548          & 0.48           & 0.826          & 0.554          & 0.744          & 0.82           & 0.731          \\
+		& Linear SVM               & \underline{0.554}    & 0.438          & 0.826          & \underline{0.56}     & \underline{0.819}    & \underline{0.831}    & \underline{0.815}    \\    \midrule
+		& \textbf{Better}          & \textbf{0.554} & \textbf{0.511} & \textbf{0.827} & \textbf{0.56}  & \textbf{0.819} & \textbf{0.831} & \textbf{0.815}	\\    \bottomrule
 	\end{tabular}
 \end{table*}
 
